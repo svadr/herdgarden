@@ -38,25 +38,27 @@ def shot(state, out, scale=2):
 def label(png, text):
     """Draw a rounded dark badge with white text onto a frame, centered on LABEL_AT."""
     t = os.path.join(TMP, 'label-text.png')
-    subprocess.run(['magick', '-background', 'none', '-fill', 'white', '-font', UI_FONT, '-pointsize', '22', f'label:{text}', t], check=True)
+    subprocess.run(['magick', '-background', 'none', '-fill', 'white', '-font', UI_FONT, '-pointsize', '28', f'label:{text}', t], check=True)
     w, h = map(int, subprocess.run(['magick', 'identify', '-format', '%w %h', t], capture_output=True, text=True, check=True).stdout.split())
-    bw, bh = w + 40, h + 18
+    bw, bh = w + 48, h + 22
     x, y = LABEL_AT[0] - bw // 2, LABEL_AT[1]
     out = png.replace('.png', '-label.png')
     subprocess.run(['magick', png, '-fill', 'rgba(26,32,30,0.82)', '-draw', f'roundrectangle {x},{y},{x + bw},{y + bh},{bh // 2},{bh // 2}',
-                    t, '-geometry', f'+{x + 20}+{y + 9}', '-composite', out], check=True)
+                    t, '-geometry', f'+{x + 24}+{y + 11}', '-composite', out], check=True)
     return out
 
 
-def fade_gif(keys, texts, out, hold=300, steps=6, step_delay=8):
-    """A looping GIF that holds each key picture with its label, then fades to the next one without labels."""
+def fade_gif(keys, texts, out, hold=300, steps=3, step_delay=12, width=880, colors=96):
+    """A looping GIF that holds each key picture with its label, then fades to the next one without labels.
+    Scaled to `width` (the README's column) with a shared palette of `colors`, to keep the file small."""
     seq = []
     for i, k in enumerate(keys):
         seq += ['-delay', str(hold), label(k, texts[i])]
         pat = os.path.join(TMP, f'fade{i}_%02d.png')
         subprocess.run(['magick', k, keys[(i + 1) % len(keys)], '-morph', str(steps), pat], check=True)
         seq += ['-delay', str(step_delay), *[pat % j for j in range(1, steps + 1)]]
-    subprocess.run(['magick', '-loop', '0', *seq, '-fuzz', '1%', '-layers', 'Optimize', out], check=True)
+    subprocess.run(['magick', '-loop', '0', *seq, '-resize', f'{width}x', '+dither', '-colors', str(colors),
+                    '-fuzz', '2%', '-layers', 'Optimize', out], check=True)
     print(out, os.path.getsize(out) // 1024, 'KB')
 
 
