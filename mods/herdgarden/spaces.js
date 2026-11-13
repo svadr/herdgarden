@@ -6,7 +6,7 @@
 import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout } from "herdr";
-// Herdewvalley: Herdr's spaces list, with each space's home in place of its colored letter, and a
+// Herdgarden: Herdr's spaces list, with each space's home in place of its colored letter, and a
 // New space row while there are no spaces yet. Everything else is Herdr's own.
 import { ART, homes, homeOf, keyHint } from "./core.js";
 

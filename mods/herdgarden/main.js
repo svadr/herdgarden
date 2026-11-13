@@ -1,13 +1,13 @@
-// Herdewvalley: one mod, drawn by role. The layout gives each copy props { role }:
+// Herdgarden: one mod, drawn by role. The layout gives each copy props { role }:
 //   brand    the top of the sidebar: name, search, fold
 //   spaces   the spaces list, each space with its home
 //   agents   the agents list, each agent as a villager
 //   yard     the shown agent's yard: its space's home, its crops, and the villager at work
-//   footer   Herdewvalley (the theme's own panel), Settings (Herdr's own), Add machine
+//   footer   Herdgarden (the theme's own panel), Settings (Herdr's own), Add machine
 //   tabs     the tab bar, with the villager's face on a tab that has an agent
 //   status   the status bar with the clock; it also keeps the colors and the valley picture up to date
 //   empty    what the middle of the window shows before any space exists
-//   panel    the Herdewvalley panel (a popup)
+//   panel    the Herdgarden panel (a popup)
 
 import { View, div } from "gpui-kit";
 import { props, theme } from "herdr";
@@ -22,7 +22,7 @@ import Panel from "./panel.js";
 
 const ROLES = { brand: Brand, spaces: Spaces, agents: Agents, yard: Yard, footer: Footer, tabs: Tabs, status: Status, empty: Empty, panel: Panel };
 
-export default class Herdewvalley extends View {
+export default class Herdgarden extends View {
   init(p, cx) {
     const pr = props() ?? p ?? {};
     // The agents list opens its own sort menu as a popup of this mod.
@@ -33,7 +33,7 @@ export default class Herdewvalley extends View {
   }
 
   render(cx) {
-    if (!this.role) return div().p(8).text_size(12).text_color(theme().dim).child(`herdewvalley: no role "${props()?.role}"`);
+    if (!this.role) return div().p(8).text_size(12).text_color(theme().dim).child(`herdgarden: no role "${props()?.role}"`);
     return this.role.render(cx);
   }
 }

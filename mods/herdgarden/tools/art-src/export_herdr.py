@@ -1,9 +1,9 @@
-"""Exports the Herdewvalley art for the Herdr mod. Everything is drawn by the scripts next to this one;
+"""Exports the Herdgarden art for the Herdr mod. Everything is drawn by the scripts next to this one;
 this file only scales it up (so Herdr's smooth image scaling still shows hard pixels), bakes the dawn and
 night light into the yard pictures (Herdr has no blend modes), and packs the valley scenes as small
 palette files the mod can read without a PNG decoder.
 
-  python3 export_herdr.py <out folder>      e.g. ~/.config/herdr-app/mods/herdewvalley/art
+  python3 export_herdr.py <out folder>      e.g. ~/.config/herdr-app/mods/herdgarden/art
 """
 import os, sys, math, struct, zlib, subprocess, tempfile, shutil
 HERE = os.path.dirname(os.path.abspath(__file__))

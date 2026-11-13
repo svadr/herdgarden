@@ -3,7 +3,7 @@
 import { div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
-// Herdewvalley: Herdr's agents list, with each agent drawn as its villager, dressed for the season.
+// Herdgarden: Herdr's agents list, with each agent drawn as its villager, dressed for the season.
 // Everything else is Herdr's own.
 import { MOD, villager, villagerArt, look } from "./core.js";
 import { toggleSidebar as foldSidebar } from "./chrome.js";

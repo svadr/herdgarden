@@ -10,7 +10,7 @@
           "id": "brand",
           "type": "block",
           "content": {
-            "mod": "herdewvalley",
+            "mod": "herdgarden",
             "props": {
               "role": "brand"
             }
@@ -28,7 +28,7 @@
               "id": "spaces",
               "type": "block",
               "content": {
-                "mod": "herdewvalley",
+                "mod": "herdgarden",
                 "props": {
                   "role": "spaces"
                 }
@@ -42,7 +42,7 @@
               "id": "agents",
               "type": "block",
               "content": {
-                "mod": "herdewvalley",
+                "mod": "herdgarden",
                 "props": {
                   "role": "agents"
                 }
@@ -58,7 +58,7 @@
           "id": "yard",
           "type": "block",
           "content": {
-            "mod": "herdewvalley",
+            "mod": "herdgarden",
             "props": {
               "role": "yard"
             }
@@ -71,7 +71,7 @@
           "id": "sidebar-footer",
           "type": "block",
           "content": {
-            "mod": "herdewvalley",
+            "mod": "herdgarden",
             "props": {
               "role": "footer"
             }
@@ -97,7 +97,7 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "herdewvalley",
+            "mod": "herdgarden",
             "props": {
               "role": "tabs"
             }
@@ -148,7 +148,7 @@
                   "id": "empty",
                   "type": "block",
                   "content": {
-                    "mod": "herdewvalley",
+                    "mod": "herdgarden",
                     "props": {
                       "role": "empty"
                     }
@@ -198,7 +198,7 @@
           "id": "status",
           "type": "block",
           "content": {
-            "mod": "herdewvalley",
+            "mod": "herdgarden",
             "props": {
               "role": "status"
             }
@@ -212,7 +212,7 @@
     }
   ],
   "background": "canvas",
-  "theme": "herdewvalley",
+  "theme": "herdgarden",
   "terminal_padding": [
     14,
     12
@@ -227,5 +227,5 @@
     12,
     16
   ],
-  "preview": "layouts/herdewvalley.png"
+  "preview": "layouts/herdgarden.png"
 }

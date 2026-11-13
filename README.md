@@ -1,11 +1,11 @@
 <div align="center">
 
-# 🌱 Herdewvalley
+# 🌱 Herdgarden
 
 **A quiet pixel garden for [Herdr](https://herdr.dev).**
 Your spaces are homes, your agents are villagers, and the yard shows how the work is going.
 
-![Herdewvalley](preview.png)
+![Herdgarden](preview.png)
 
 </div>
 
@@ -55,7 +55,7 @@ A soft pixel valley sits in the bottom-right corner, behind the panes. It's fade
 
 ## Settings that stay out of Herdr's way
 
-Herdr's own **Settings** is untouched. The theme's choices live in their own **Herdewvalley** row at the bottom of the sidebar:
+Herdr's own **Settings** is untouched. The theme's choices live in their own **Herdgarden** row at the bottom of the sidebar:
 
 - **Palette:** Paper (default), Sand, or Blossom
 - **Seasons:** follow the calendar, or hold one
@@ -70,15 +70,15 @@ Before your first space, the window shows an empty plot waiting to be built:
 ## Install
 
 ```sh
-git clone https://github.com/svadr/herdewvalley.git
-cd herdewvalley
+git clone https://github.com/svadr/herdgarden.git
+cd herdgarden
 cp -R layouts themes mods ~/.config/herdr-app/
-herdr-app do layout.switch --name herdewvalley
+herdr-app do layout.switch --name herdgarden
 ```
 
-Or pick **Herdewvalley** in Herdr's layout settings. `ctrl-shift-l` cycles back to your other layouts.
+Or pick **Herdgarden** in Herdr's layout settings. `ctrl-shift-l` cycles back to your other layouts.
 
-**Claude Code:** if you never picked a Claude Code theme, Herdewvalley sets it to **Auto** the first time it runs, so Claude's code and file previews stay readable from dawn to night. A theme you chose is left alone, and `/theme` changes it any time. Restart Claude sessions that were already open.
+**Claude Code:** if you never picked a Claude Code theme, Herdgarden sets it to **Auto** the first time it runs, so Claude's code and file previews stay readable from dawn to night. A theme you chose is left alone, and `/theme` changes it any time. Restart Claude sessions that were already open.
 
 **Needs:** macOS and `python3` (it draws the valley at your window's size). Without Python everything works except the valley picture.
 
@@ -89,13 +89,13 @@ Or pick **Herdewvalley** in Herdr's layout settings. `ctrl-shift-l` cycles back 
 Hold a look from a key or the terminal:
 
 ```sh
-herdr-app do herdewvalley.night     # or dawn, day, spring, summer, autumn, winter, paper, sand, blossom
-herdr-app do herdewvalley.auto      # follow the clock and calendar again
+herdr-app do herdgarden.night     # or dawn, day, spring, summer, autumn, winter, paper, sand, blossom
+herdr-app do herdgarden.auto      # follow the clock and calendar again
 ```
 
 ```json
 // ~/.config/herdr-app/keys.json
-{ "global": { "cmd-alt-n": "herdewvalley.night", "cmd-alt-a": "herdewvalley.auto" } }
+{ "global": { "cmd-alt-n": "herdgarden.night", "cmd-alt-a": "herdgarden.auto" } }
 ```
 
 ## Extra: a matching Claude Code status line
@@ -103,12 +103,12 @@ herdr-app do herdewvalley.auto      # follow the clock and calendar again
 `extras/claude-code-statusline.sh` is the "Gardener" status line from the screenshots: 🧑‍🌾 model, 🏡 folder, 🌿 branch, 🪙 cost, and raked meters for context and usage. It needs `jq`. In `~/.claude/settings.json`:
 
 ```json
-{ "statusLine": { "type": "command", "command": "bash /path/to/herdewvalley/extras/claude-code-statusline.sh" } }
+{ "statusLine": { "type": "command", "command": "bash /path/to/herdgarden/extras/claude-code-statusline.sh" } }
 ```
 
 ## How it's made
 
-Everything is original pixel art, drawn by small Python scripts in [`mods/herdewvalley/tools/art-src`](mods/herdewvalley/tools/art-src), with no image editor. [`RECIPE.md`](RECIPE.md) describes the layout in enough detail for an agent to rebuild it from an empty folder. The spaces, agents and tabs lists are Herdr's own shipped mods with small changes.
+Everything is original pixel art, drawn by small Python scripts in [`mods/herdgarden/tools/art-src`](mods/herdgarden/tools/art-src), with no image editor. [`RECIPE.md`](RECIPE.md) describes the layout in enough detail for an agent to rebuild it from an empty folder. The spaces, agents and tabs lists are Herdr's own shipped mods with small changes.
 
 ## License
 

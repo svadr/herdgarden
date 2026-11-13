@@ -1,4 +1,4 @@
-// The top and the foot of the sidebar. The foot has the theme's own row, Herdewvalley, above Herdr's
+// The top and the foot of the sidebar. The foot has the theme's own row, Herdgarden, above Herdr's
 // Settings and Add machine: Settings opens Herdr's own settings, untouched.
 
 import { div, image, svg } from "gpui-kit";
@@ -22,7 +22,7 @@ export function toggleSidebar() {
   run("layout.resize", { id: "sidebar", px: toRail ? (appWindow()?.platform === "macos" ? 76 : 44) : (shared("sidebar.width") ?? 268) });
 }
 
-// How tall the Herdewvalley panel may be, in layout px. Read in a render (the only place the window can be).
+// How tall the Herdgarden panel may be, in layout px. Read in a render (the only place the window can be).
 export function panelRoom() {
   try { return Math.max(240, Math.min(640, Math.floor(window.viewport_size().height / (settings()?.zoom || 1)) - 32)); } catch { return 600; }
 }
@@ -41,7 +41,7 @@ export class Brand {
       .when(w?.platform === "macos" && !w?.fullscreen && !collapsed, el => el.pl(76))
       .when(!collapsed, el => el.child(h_flex().flex_1().min_w(0).gap(7).items_center()
         .child(image(`${ART}/sprout.svg`).size(15).flex_none())
-        .child(div().font_family(FONT).text_size(14.5).text_color(t.foreground).truncate().child("herdewvalley"))))
+        .child(div().font_family(FONT).text_size(14.5).text_color(t.foreground).truncate().child("herdgarden"))))
       .when(!collapsed, el => el.child(this.button("search", svg(`${ICON}/search.svg`).size(15), () => run("mod.open", { name: "picker" }))))
       // On the macOS rail the traffic lights fill the row; the agents list's » unfolds it.
       .when(!(collapsed && w?.platform === "macos"), el => el.child(this.button("sidebar-toggle", svg(`${ICON}/sidebar.svg`).size(15), toggleSidebar)));
@@ -62,7 +62,7 @@ export class Footer {
     const ready = div().size(6).rounded_full().bg(t.accent);
     return v_flex().size_full().bg(t.chrome).border_t(1).border_color(t.border).px(8).pt(4).pb(8).text_size(13)
       .when(collapsed, el => el.px(0).items_center())
-      .child(row("herdewvalley", image(`${ART}/sprout.svg`).size(14).flex_none(), "Herdewvalley", false,
+      .child(row("herdgarden", image(`${ART}/sprout.svg`).size(14).flex_none(), "Herdgarden", false,
         () => openOverlay({ mod: MOD, kind: "popup", width: 268, height: this.room, props: { role: "panel" } })))
       .child(row("settings", svg(`${ICON}/settings.svg`).size(14), "Settings", false, () => run("app.settings"))
         .when(Boolean(updates().app.ready), el => el.child(collapsed ? ready.absolute().top(5).right(6) : ready)))

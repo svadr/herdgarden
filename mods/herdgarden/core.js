@@ -1,10 +1,10 @@
-// Herdewvalley: what every part of the layout agrees on. The person's choices (shared "hv.config"),
+// Herdgarden: what every part of the layout agrees on. The person's choices (shared "hv.config"),
 // the season and time of day they lead to, the colors for each palette, and which villager or home
 // stands for which agent or space. No drawing here.
 
 import { shared, setShared, keys, window as appWindow } from "herdr";
 
-export const MOD = "herdewvalley";
+export const MOD = "herdgarden";
 export const ART = `mods/${MOD}/art`;
 export const FONT = "Pixelify Sans";
 export const PALETTES = ["paper", "sand", "blossom"];

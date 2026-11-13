@@ -31,8 +31,8 @@ export default class Status {
     cx.spawn(async () => {
       try { setShared("hv.claude", await adoptClaudeTheme()); } catch (e) { setShared("hv.claude", `error: ${e?.message ?? e}`); }
     });
-    // Commands for keys.json or `herdr-app do`: herdewvalley.night, .day, .dawn, .spring, .summer, .autumn,
-    // .winter, .paper, .sand, .blossom hold that choice; herdewvalley.auto follows the clock and calendar again.
+    // Commands for keys.json or `herdr-app do`: herdgarden.night, .day, .dawn, .spring, .summer, .autumn,
+    // .winter, .paper, .sand, .blossom hold that choice; herdgarden.auto follows the clock and calendar again.
     cx.spawn(async (cx) => {
       for (;;) {
         const c = await nextCommand();

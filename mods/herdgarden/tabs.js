@@ -1,7 +1,7 @@
 import { div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings } from "herdr";
-// Herdewvalley: Herdr's tab bar. A tab with an agent in it shows that villager's face before its name;
+// Herdgarden: Herdr's tab bar. A tab with an agent in it shows that villager's face before its name;
 // with several agents, the one that most needs you. Everything else is Herdr's own.
 import { villager, villagerArt, look } from "./core.js";
 

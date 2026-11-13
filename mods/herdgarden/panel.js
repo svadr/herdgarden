@@ -1,4 +1,4 @@
-// The Herdewvalley panel: the theme's own choices, kept in shared "hv.config". Herdr's settings are not
+// The Herdgarden panel: the theme's own choices, kept in shared "hv.config". Herdr's settings are not
 // touched; this opens from its own row in the sidebar.
 
 import { div } from "gpui-kit";
@@ -39,7 +39,7 @@ export default class Panel {
     };
     // Never taller than the window: past that, the rows scroll.
     return v_flex().id("hv-panel").w_full().max_h(panelRoom()).overflow_y_scrollbar().p(12).gap(8).bg(t.popover).text_size(12.5).text_color(t.foreground)
-      .child(div().font_family(FONT).text_size(14).text_color(t.muted).child("herdewvalley"))
+      .child(div().font_family(FONT).text_size(14).text_color(t.muted).child("herdgarden"))
       .child(label("Palette"))
       .child(h_flex().gap(6).children(PALETTES.map(swatch)))
       .child(line())

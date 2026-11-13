@@ -1,11 +1,11 @@
-# Herdewvalley art sources
+# Herdgarden art sources
 
 The Python scripts that draw every picture in `../../art/`. Standard library only, plus `img2webp` (from `webp`) for the walk and weather loops.
 
 To redraw everything after a change:
 
 ```sh
-python3 export_herdr.py ~/.config/herdr-app/mods/herdewvalley/art
+python3 export_herdr.py ~/.config/herdr-app/mods/herdgarden/art
 ```
 
 - `scene.py` draws the valley behind the panes (3 palettes, 3 times of day, 4 seasons).

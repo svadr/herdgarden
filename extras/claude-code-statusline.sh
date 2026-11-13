@@ -1,5 +1,5 @@
 #!/bin/bash
-# Herdewvalley "Gardener" status line for Claude Code.
+# Herdgarden "Gardener" status line for Claude Code.
 #   line 1: gardener (model), home (folder), branch, coins (cost), sky + session time
 #   line 2: context, 5-hour and 7-day usage as raked-line meters
 #   line 3: what each meter is, and when the two limits reset
