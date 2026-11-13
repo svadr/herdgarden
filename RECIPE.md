@@ -39,7 +39,7 @@ Left to right:
   - **Status bar, 28 px.** Herdr's own (machine, branch, agent count, the palette key), plus a sun, sunrise, or moon icon and the clock on the right.
 - **Before any space exists**, the panes area shows instead: the sprout (36 px), "Nothing planted yet" (Pixelify Sans 25), one line on what a space is, a "New space ⌘N" button in `accent`, three steps (Open a space / Start an agent / Watch the yard) with art, and the Palette, Settings and Help keys.
 
-The **Herdgarden panel** (a 268 px popup, as tall as the window allows, scrolls past that): palette swatches (Paper, Sand, Blossom), "Follow the seasons" (or pick one), "Follow the time of day" with Sunrise and sunset or Fixed hours (or pick one), background picture strength (40, 55, 65, 80, 100%) and blur (off, 1, 1.5, 2, 3), and Animations on or off.
+The **Herdgarden panel** (a 268 px popup, as tall as the window allows, scrolls past that): palette swatches (Paper, Sand, Blossom), "Follow the seasons" (or pick one), "Follow the time of day" with Sunrise and sunset or Fixed hours (or pick one), background picture strength (40, 55, 65, 80, 100%) and blur (off, 1, 1.5, 2, 3), Animations on or off, and **Claude Code status line** (off until switched on; the line under it reads "Shows Gardener in ~/.claude/settings.json." when off and "Gardener. Off puts your old one back." when on).
 
 ## How it behaves
 
@@ -67,11 +67,11 @@ Layout `layouts/herdgarden.json`: Herdr's `main` tree, with these changes. Every
 
 ```
 root (row, titlebar none, traffic_lights [12,16], theme "herdgarden", terminal_opacity 0, preview layouts/herdgarden.png)
-├─ sidebar (column, 268 px, chrome)
+├─ sidebar (column, 268 px, min 44, max 480, not resizable, chrome)
 │  ├─ brand        block 46 px, window_drag      role: brand
 │  ├─ sidebar-lists (column)
-│  │  ├─ spaces    block weight 1                role: spaces
-│  │  └─ agents    block weight 1                role: agents
+│  │  ├─ spaces    block weight 1, min 90        role: spaces
+│  │  └─ agents    block weight 1, min 90        role: agents
 │  ├─ yard         block 190 px                  role: yard
 │  └─ sidebar-footer block 97 px                 role: footer
 └─ work (column)
@@ -107,9 +107,11 @@ Mod `mods/herdgarden/` (`mod.json`: `place: "none"`, and an `overlay` of kind `d
 | `tools/bg.py` | | draws the valley picture (Python 3 standard library) |
 | `tools/art-src/` | | the scripts that draw every picture, and the design preview page |
 
-Herdr functions used: `spaces`, `agents`, `panes`, `terminals`, `focused`, `machines`, `layout`, `theme`, `settings`, `keys`, `window`, `shared`, `setShared`, `run`, `exec`, `hc`, `openOverlay`, `closeOverlay`, `nextCommand`, `setAgentOrder`, `watchFolder`, `appHome`, `home`, `readTextFile`, `writeTextFile`, `notify`, `updates`, and `fs/promises` (`exists`, `readdir`, `unlink`). Commands: `layout.set`, `layout.select`, `layout.show`, `layout.hide`, `layout.resize`, `space.new`, `space.select`, `space.move`, `tab.*`, `pane.focus`, `terminal.pin`, `terminal.peek`, `mod.open`, `app.settings`, `app.palette`.
+Herdr functions used: `spaces`, `agents`, `panes`, `terminals`, `focused`, `machines`, `layout`, `theme`, `settings`, `keys`, `window`, `shared`, `setShared`, `run`, `exec`, `hc`, `openOverlay`, `closeOverlay`, `nextCommand`, `setAgentOrder`, `watchFolder`, `appHome`, `home`, `readTextFile`, `writeTextFile`, `notify`, `updates`, and `fs/promises` (`exists`, `readdir`, `unlink`). Commands: `layout.set`, `layout.select`, `layout.show`, `layout.hide`, `layout.resize`, `space.new`, `space.select`, `space.move`, `tab.*`, `pane.focus`, `terminal.pin`, `terminal.peek`, `mod.open`, `app.settings`, `app.palette`, `window.minimize`, `window.maximize`, `window.close`.
 
-Programs it runs, all local: `python3 tools/bg.py` (draws the valley), `readlink /etc/localtime` (the time zone's name), `defaults read com.apple.universalaccess reduceMotion`, and `git` (Herdr's spaces list, unchanged). No network. It writes only under its own folder (`bg/`) and to shared state.
+Programs it runs, all local: `python3 tools/bg.py` (draws the valley), `readlink /etc/localtime` (the time zone's name), `defaults read com.apple.universalaccess reduceMotion`, and `git` (Herdr's spaces list, unchanged). No network. Claude Code, not the mod, runs `tools/statusline.py`.
+
+It writes to its own folder (`bg/`), to shared state, to `themes/herdgarden.json` (the terminal colors for each look), and to `data/herdgarden/claude-statusline-before.json`. Outside the Herdr folder it writes only `~/.claude/settings.json`: `theme` once, when the person never chose one, and `statusLine` only when the panel's switch is flipped.
 
 Art, all original, in `mods/herdgarden/art/`:
 
@@ -133,6 +135,7 @@ Art, all original, in `mods/herdgarden/art/`:
 - `layout.set` cannot run inside a render. Read the layout and write it in the same tick, and only when the look really changed.
 - A terminal's plain text and cursor come only from the theme file, not from the layout's `colors`, so `look.js` rewrites `themes/herdgarden.json` with every look. Without that, night shows dark text on a dark window.
 - Terminal programs that pick their own colors ignore the theme. Claude Code on its default dark theme paints file previews and code near-white, which vanishes at dawn and day; its `auto` theme asks the terminal for its background and follows each switch, so `claude.js` sets it once. A theme the person chose (in `~/.claude/settings.json`, or other than `dark` in the older `~/.claude.json`) is left alone. Claude Code sessions already running keep their colors until restarted. Scrollback printed before a switch keeps its old colors.
+- Never set Claude Code's `statusLine` on your own. The person may already have one. An earlier build replaced it on the first start; the switch exists so nothing changes until the person flips it, and so their old line comes back when they flip it off.
 - `spaces.js`, `agents.js` and `tabs.js` are copies of Herdr 0.1.15's shipped mods with small changes; a newer Herdr may change the originals.
 - Assumes macOS (traffic lights, `defaults`, `/etc/localtime`) and `python3` on the PATH. Without Python, everything works except the valley picture, and shared `hv.error` says why.
 
