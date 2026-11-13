@@ -439,6 +439,9 @@ body { background: var(--page); color: var(--page-fg); font-family: var(--ui); f
           <label class="hv-r"><span>Blur</span><input type="range" id="set-picb" min="0" max="3" step="0.5" value="1.5"><output id="out-picb">1.5</output></label>
           <hr>
           <button type="button" class="sw" id="set-motion" role="switch" aria-checked="true"><span>Animations</span><i></i></button>
+          <hr>
+          <button type="button" class="sw" id="set-claude" role="switch" aria-checked="false"><span>Claude Code status line</span><i></i></button>
+          <div class="hv-i" id="claude-info">Shows Gardener in ~/.claude/settings.json.</div>
         </div>
         <div class="side-foot">
           <div id="hv-open"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" style="stroke:none"><g fill="var(--working)"><rect x="1" y="1" width="2" height="1"/><rect x="0" y="2" width="4" height="1"/><rect x="1" y="3" width="3" height="1"/><rect x="6" y="0" width="2" height="1"/><rect x="5" y="1" width="4" height="1"/><rect x="5" y="2" width="3" height="1"/><rect x="4" y="3" width="1" height="4"/></g><rect x="2" y="7" width="5" height="1" fill="var(--accent)"/><rect x="3" y="8" width="3" height="1" fill="var(--accent)"/></svg>Herdgarden</div>
@@ -527,6 +530,7 @@ body { background: var(--page); color: var(--page-fg); font-family: var(--ui); f
       <h2>Status line: Gardener</h2>
       <p>🧑‍🌾 the model, your gardener. 🏡 the folder, a home like the spaces in the sidebar. 🌿 the git branch. 🪙 what the session has cost. 🌅 ☀️ 🌙 session time, with the sky for the time of day.</p>
       <p>🪴 how full the context is; the plant grows from 🌱 to 🌿 to 🪴 to 🌳. 💧 your 5-hour usage. 🌾 your 7-day usage. The third line names each meter and says when the two limits reset.</p>
+      <p>It is off until you turn it on: open Herdgarden in the sidebar and switch on Claude Code status line. Herdgarden keeps your old status line, and switching it off puts that one back.</p>
     </div>
     <div class="card">
       <h2>First run</h2>
@@ -836,6 +840,12 @@ body { background: var(--page); color: var(--page-fg); font-family: var(--ui); f
   document.getElementById('set-season').addEventListener('click', function () { if (sAuto) setSeason(season, false); else setSeason(seasonOf(new Date()), true); });
   Array.prototype.forEach.call(document.querySelectorAll('#set-seasons button'), function (b) { b.addEventListener('click', function () { setSeason(b.dataset.s, false); }); });
   document.getElementById('set-motion').addEventListener('click', function () { motion(wrap.classList.contains('still')); });
+  // the Gardener status line for Claude Code: off until switched on; off again puts the old one back
+  document.getElementById('set-claude').addEventListener('click', function () {
+    var on = this.getAttribute('aria-checked') !== 'true';
+    this.setAttribute('aria-checked', String(on));
+    document.getElementById('claude-info').textContent = on ? 'Gardener. Off puts your old one back.' : 'Shows Gardener in ~/.claude/settings.json.';
+  });
   document.getElementById('mo-on').addEventListener('click', function () { motion(true); });
   document.getElementById('mo-off').addEventListener('click', function () { motion(false); });
   motion(true);
