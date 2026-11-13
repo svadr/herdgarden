@@ -5,7 +5,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from px import C, hexc
 from villagers3 import grid, span, put, outline, SKIN, W, H, farmer as _f, tinker as _t, gardener as _g, elder as _e
 
-FRAMES = ((0, -1, 0), (1, 0, -1), (0, 1, 0), (1, 0, -1))        # leg pose, arm swing, body lift
+# leg pose (0: near leg forward, 1: passing, 2: far leg forward), arm swing, body lift
+FRAMES = ((0, -1, 0), (1, 0, -1), (2, 1, 0), (1, 0, -1))
 
 
 def head(g, dy, bald=False):
@@ -38,13 +39,18 @@ def arm(g, dy, swing, sleeve_to=20):
 
 
 def legs(g, pose):
-    if pose == 0:
-        for y in range(23, 28):
-            a = 5 if y < 25 else 4
-            b = 8 if y < 25 else 9
-            span(g, y, a, a + 2, 'n'); span(g, y, b, b + 2, 'N')
+    if pose in (0, 2):
+        # a full stride: the legs angle apart, the forward foot ahead of the body, the back one behind.
+        # The near leg is the light one (N, B); which leg leads swaps between pose 0 and 2.
+        front, back = ('N', 'n') if pose == 0 else ('n', 'N')
+        fshoe, bshoe = ('B', 'b') if pose == 0 else ('b', 'B')
+        for i, y in enumerate(range(23, 28)):
+            bx = 6 - (i + 1) // 2                                   # back leg: 6 .. 4
+            fx = 8 + (i + 1) // 2                                   # front leg: 8 .. 10
+            span(g, y, bx, bx + 1, back); span(g, y, fx, fx + 1, front)
         for y in (28, 29):
-            span(g, y, 3, 6, 'b'); span(g, y, 9, 12, 'B')
+            span(g, y, 2, 5, bshoe); span(g, y, 10, 13, fshoe)
+        g[29][2] = '.'; g[28][13] = '.'                              # heel up behind, toe down in front
     else:
         for y in range(23, 28):
             span(g, y, 6, 7, 'n'); span(g, y, 8, 9, 'N')
@@ -106,8 +112,9 @@ def gardener(pose, swing, dy):
         span(g, y + (dy if y < 23 else 0), 9, 10, 'W')
     put(g, 26, 9, 'ww')
     for y in (28, 29):
-        if pose == 0:
-            span(g, y, 4, 6, 'b'); span(g, y, 9, 11, 'B')
+        if pose in (0, 2):
+            near, far = ('B', 'b') if pose == 0 else ('b', 'B')
+            span(g, y, 3, 5, far); span(g, y, 10, 12, near)
         else:
             span(g, y, 6, 9, 'B'); g[y][6] = 'b'
     arm(g, dy, swing, sleeve_to=18)

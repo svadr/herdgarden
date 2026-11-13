@@ -17,6 +17,7 @@ import sprites24
 import villagers3 as v3
 import villagers_side as vside
 import villagers_seasons as vsn
+import villagers_turn as vturn
 
 OUT = os.path.abspath(os.path.expanduser(sys.argv[1]))
 SEASONS = ('spring', 'summer', 'autumn', 'winter')
@@ -189,6 +190,14 @@ def villagers():
             webp(frames, base + '-walk-r.webp', 215, 4)
             webp([flip(x) for x in frames], base + '-walk-l.webp', 215, 4)
             save(frames[1], base + '-stand-r.png', 6); save(flip(frames[1]), base + '-stand-l.png', 6)
+            # walking toward you (down) and away (up)
+            for view, back in (('down', False), ('up', True)):
+                grid = vturn.turned(name, back)
+                fr = []
+                for g in vturn.walk(grid):
+                    f = C(16, 32); f.stamp(0, 0, [''.join(r) for r in g], pal); fr.append(f)
+                webp(fr, base + f'-walk-{view}.webp', 215, 4)
+                save(fr[1], base + f'-{"back" if back else "front"}-stand.png', 6)
     vsn.now['o'] = {}
 
 

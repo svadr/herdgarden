@@ -22,7 +22,8 @@ import { narrow } from "./chrome.js";
 const W = 212, H = 132;
 const BX = 12, BY = 80; // the crop bed's corner
 // The round, from the design: where each leg ends (relative to the crop bed), as a percent of the round,
-// whether the villager walks or stands, which way they face, and whether the tool is in use.
+// whether the villager walks or stands, which way they face (dir: 1 right, -1 left; v: 1 toward you,
+// -1 away), and whether the tool is in use.
 const ROUND_MS = 52100;
 const START = [-2, -2];
 const LEGS = [
@@ -34,8 +35,9 @@ const LEGS = [
   { until: 40.73, x: 136, y: -7, walk: false, dir: 1, work: true },
   { until: 48.75, x: 174, y: -7, walk: true, dir: 1, work: true },
   { until: 63.53, x: 104, y: -7, walk: true, dir: -1, work: true },
-  { until: 67.54, x: 104, y: 12, walk: true, dir: -1, work: false },
+  { until: 67.54, x: 104, y: 12, walk: true, dir: -1, v: 1, work: false },
   { until: 75.22, x: 104, y: 12, walk: false, dir: 1, work: false },
+  { until: 78.0, x: 104, y: -2, walk: true, dir: -1, v: -1, work: false },
   { until: 84.57, x: 62, y: -2, walk: true, dir: -1, work: false },
   { until: 98.08, x: -2, y: -2, walk: true, dir: -1, work: true },
   { until: 100, x: -2, y: -2, walk: false, dir: 1, work: true },
@@ -120,7 +122,16 @@ export default class Yard {
     const using = !leg || leg.work;
     const kids = [];
     if (L.tod !== "day") kids.push(at(-20, -8, 56, 56).opacity(L.tod === "dawn" ? 0.45 : 1).child(image(`${ART}/tool/halo.png`).size_full()));
-    kids.push(pic(leg?.walk ? `${villagerArt(who, L.season, `walk-${side}`)}.webp` : `${villagerArt(who, L.season, `stand-${side}`)}.png`, 0, 0, 16, 32));
+    // Side-on when walking across; the face when walking down toward you, the back when walking up.
+    const body = leg?.v === 1 ? `walk-down.webp` : leg?.v === -1 ? `walk-up.webp` : leg?.walk ? `walk-${side}.webp` : `stand-${side}.png`;
+    kids.push(pic(`${villagerArt(who, L.season, body.replace(/\.(webp|png)$/, ""))}.${body.split(".").pop()}`, 0, 0, 16, 32));
+    // Walking up, the tool is in front of the body and out of sight; walking down it hangs at the side.
+    if (leg?.v === -1) return this.box(s, x, y, leg, kids);
+    if (leg?.v === 1) {
+      if (!winter) kids.push(pic(`${ART}/tool/can.png`, 11, 20, 9, 7));
+      else kids.push(pic(`${ART}/tool/shovel.png`, 9, 19, 14, 12));
+      return this.box(s, x, y, leg, kids);
+    }
     if (!winter) {
       kids.push(pic(`${ART}/tool/can${right ? "" : "-l"}.png`, mx(11, 9), 19, 9, 7));
       if (using) [[21, 22, 520], [20, 25, 700], [22, 27, 610]].forEach(([dx, dy, period], i) => kids.push(
@@ -131,7 +142,11 @@ export default class Yard {
       if (halted) [[21, 14], [23, 11], [19, 12]].forEach(([dx, dy], i) => kids.push(
         at(mx(dx, 2), dy, 2, 2).id(`hv-snow-${i}`).bg("#ffffff").loop("opacity", { from: 0, to: 1, period: 900 })));
     }
-    // One box slides sideways and the one inside it up and down, each with its own timed move.
+    return this.box(s, x, y, leg, kids);
+  }
+
+  // One box slides sideways and the one inside it up and down, each with its own timed move.
+  box(s, x, y, leg, kids) {
     const move = { duration: leg ? this.dur : 1, easing: "linear" };
     return div().id(`hv-round-x-${this.id}`).absolute().left(x * s).top(0).w(16 * s).h(H * s).transition("left", move)
       .child(div().id(`hv-round-y-${this.id}`).absolute().left(0).top(y * s).w(16 * s).h(32 * s).transition("top", move).children(kids));
