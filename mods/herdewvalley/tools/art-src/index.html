@@ -1,0 +1,859 @@
+<title>Herdewvalley</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+/* Layout: a control strip, then one Herdr window that restyles in place, then the sprite set. */
+:root {
+  --page: #ece8e1; --page-fg: #2e2924; --page-muted: #6a6158; --page-line: #d5cdc1; --page-raise: #f8f5ef; --page-on: #2e2924; --page-on-fg: #f8f5ef;
+  --ui: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --pixel: 'Pixelify Sans', 'Geist', ui-sans-serif, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0d0c0b; --page-fg: #ebe4d9; --page-muted: #a0968a; --page-line: #2c2824; --page-raise: #191614; --page-on: #ebe4d9; --page-on-fg: #191614; color-scheme: dark }
+}
+:root[data-theme="dark"] { --page: #0d0c0b; --page-fg: #ebe4d9; --page-muted: #a0968a; --page-line: #2c2824; --page-raise: #191614; --page-on: #ebe4d9; --page-on-fg: #191614; color-scheme: dark }
+
+body { background: var(--page); color: var(--page-fg); font-family: var(--ui); font-size: 14px; line-height: 1.5 }
+.wrap { max-width: 1228px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px }
+.head h1 { margin: 0; font-family: var(--pixel); font-weight: 500; font-size: 26px; letter-spacing: .01em }
+.head p { margin: 2px 0 0; color: var(--page-muted); max-width: 60ch }
+.controls { display: flex; flex-wrap: wrap; gap: 10px }
+.seg { display: flex; padding: 3px; gap: 2px; background: var(--page-raise); border: 1px solid var(--page-line); border-radius: 10px }
+.seg button { font: inherit; font-weight: 500; color: var(--page-muted); background: none; border: 0; border-radius: 7px; padding: 6px 14px; cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--page-on); color: var(--page-on-fg) }
+.seg button:focus-visible { outline: 2px solid var(--page-fg); outline-offset: 2px }
+.stage { overflow-x: auto; padding-bottom: 6px }
+.fit { width: 1182px; height: 732px }
+.side, .tabs, .pane-h, .bar { white-space: nowrap }
+
+/* ---------- the Herdr window: its own palettes, one per variant and time of day ---------- */
+.th {
+  --canvas: #fbf6ee; --chrome: #f4ecdf; --line: #e6dac8; --fg: #3a2e25; --muted: #7a6853; --dim: #b3a28e; --accent: #ad5028;
+  --sel: rgba(58,46,37,.05); --rake: rgba(58,46,37,.11); --working: #4f7538; --blocked: #b4432f; --done: #8f6a16; --blue: #3f6f8a;
+  --scene: url(art/scene-sand-day.png);
+}
+.win {
+  --canvas: #fbf6ee; --chrome: #f4ecdf; --line: #e6dac8; --fg: #3a2e25; --muted: #7a6853; --dim: #b3a28e; --accent: #ad5028;
+  --sel: rgba(58,46,37,.05); --rake: rgba(58,46,37,.11); --working: #4f7538; --blocked: #b4432f; --done: #8f6a16; --blue: #3f6f8a;
+  --scene: url(art/scene-sand-day.png);
+  width: 1180px; height: 730px; display: flex; background: var(--canvas); color: var(--fg); font-family: var(--ui); font-size: 12px; line-height: 1.35;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.14); transform-origin: top left; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+}
+.th[data-v="paper"][data-m="day"] { --canvas: #fbfbf7; --chrome: #f4f5ef; --line: #dfe2d9; --fg: #2b3531; --muted: #66726b; --dim: #9aa39c; --accent: #bc4e34; --sel: rgba(43,53,49,.05); --rake: rgba(43,53,49,.11); --working: #467552; --blocked: #bc4e34; --done: #8a6714; --blue: #3a6f8f; --scene: url(art/scene-paper-day.png) }
+.th[data-v="paper"][data-m="night"] { --canvas: #121816; --chrome: #0e1312; --line: #25302b; --fg: #dde5df; --muted: #8e9b94; --dim: #5f6c66; --accent: #e8866a; --sel: rgba(221,229,223,.06); --rake: rgba(221,229,223,.11); --working: #8cc29a; --blocked: #e8866a; --done: #e3be6a; --blue: #8cc0dc; --scene: url(art/scene-paper-night.png) }
+.th[data-v="sand"][data-m="night"] { --canvas: #1a1612; --chrome: #15110e; --line: #332b23; --fg: #efe5d6; --muted: #a39480; --dim: #6f6252; --accent: #ea9a6e; --sel: rgba(239,229,214,.06); --rake: rgba(239,229,214,.11); --working: #a9c785; --blocked: #ee8468; --done: #e8c273; --blue: #9cc4d8; --scene: url(art/scene-sand-night.png) }
+.th[data-v="sand"][data-m="dawn"] { --canvas: #fcf2e8; --chrome: #f7e7d9; --line: #ecd6c3; --fg: #3c2c26; --muted: #7d6253; --dim: #bfa391; --accent: #b34a30; --sel: rgba(60,44,38,.05); --rake: rgba(60,44,38,.11); --scene: url(art/scene-sand-dawn.png) }
+.th[data-v="paper"][data-m="dawn"] { --canvas: #fbf8f4; --chrome: #f5f1ec; --line: #e3ddd6; --fg: #2f3432; --muted: #676b68; --dim: #a3a39d; --accent: #bc4e34; --sel: rgba(47,52,50,.05); --rake: rgba(47,52,50,.11); --working: #467552; --blocked: #bc4e34; --done: #8a6714; --blue: #3a6f8f; --scene: url(art/scene-paper-dawn.png) }
+.th[data-v="blossom"][data-m="dawn"] { --canvas: #fef3f1; --chrome: #fbe6e4; --line: #f0d5d3; --fg: #43302f; --muted: #876260; --dim: #c9a5a3; --accent: #b8445d; --sel: rgba(67,48,47,.05); --rake: rgba(67,48,47,.11); --working: #3f775a; --blocked: #b93a3a; --done: #8c6620; --blue: #4a6f96; --scene: url(art/scene-blossom-dawn.png) }
+.th[data-v="blossom"][data-m="day"] { --canvas: #fdf7f4; --chrome: #f8ece7; --line: #ecdcd5; --fg: #40302e; --muted: #836660; --dim: #bda49d; --accent: #b8445d; --sel: rgba(64,48,46,.05); --rake: rgba(64,48,46,.11); --working: #3f775a; --blocked: #b93a3a; --done: #8c6620; --blue: #4a6f96; --scene: url(art/scene-blossom-day.png) }
+.th[data-v="blossom"][data-m="night"] { --canvas: #18131a; --chrome: #130f15; --line: #2f2633; --fg: #f1e6ea; --muted: #a8939f; --dim: #6e5d69; --accent: #f08fa4; --sel: rgba(241,230,234,.06); --rake: rgba(241,230,234,.11); --working: #9fd3b0; --blocked: #f27a8a; --done: #efc57c; --blue: #a5bfe6; --scene: url(art/scene-blossom-night.png) }
+
+.win svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none }
+.win img { image-rendering: pixelated; flex: none }
+.side { position: relative; width: 228px; flex: none; display: flex; flex-direction: column; background: var(--chrome); border-right: 1px solid var(--line) }
+.side-top { height: 40px; display: flex; align-items: center; padding: 0 12px; gap: 7px; color: var(--muted) }
+.light { width: 11px; height: 11px; border-radius: 50%; flex: none }
+.brand { margin-left: 12px; margin-right: auto; display: flex; align-items: center; gap: 6px; font-family: var(--pixel); font-size: 13px; color: var(--fg) }
+.brand svg { width: 12px; height: 12px; stroke: none }
+.sec { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 4px; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: .02em }
+.sec.rule { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line) }
+.rows { display: flex; flex-direction: column; gap: 1px; padding: 0 6px }
+.row { position: relative; min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px }
+.row.ag { min-height: 44px }
+.row.ag img { height: 30px }
+.row img { width: 24px; height: 24px }
+.row.sel { background: var(--sel); box-shadow: inset 0 0 0 1px var(--line) }
+.row.sel::before { content: ""; position: absolute; inset: 0 8px 0 34%; pointer-events: none; background: linear-gradient(var(--rake), var(--rake)) 0 3px / 100% 1px no-repeat, linear-gradient(var(--rake), var(--rake)) 0 6px / 100% 1px no-repeat, linear-gradient(var(--rake), var(--rake)) 0 calc(100% - 3px) / 100% 1px no-repeat, linear-gradient(var(--rake), var(--rake)) 0 calc(100% - 6px) / 100% 1px no-repeat; -webkit-mask-image: linear-gradient(to right, transparent, #000 60%); mask-image: linear-gradient(to right, transparent, #000 60%) }
+.row.ag.sel::before { background: linear-gradient(var(--rake), var(--rake)) 0 3px / 100% 1px no-repeat, linear-gradient(var(--rake), var(--rake)) 0 calc(100% - 3px) / 100% 1px no-repeat }
+.row > * { position: relative }
+.name { font-weight: 500 }
+.name, .sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.two { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0 }
+.two > span { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.sub { color: var(--muted); font-size: 10.5px }
+.count { margin-left: auto; color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums }
+.st { margin-left: auto; flex: none; display: flex; align-items: center; gap: 6px; font-size: 10.5px; white-space: nowrap }
+.st.working { color: var(--working) } .st.blocked { color: var(--blocked) } .st.done { color: var(--done) } .st.idle { color: var(--dim) }
+.mark { width: 8px; height: 8px; border-radius: 50%; flex: none; box-sizing: border-box }
+.working .mark { border: 1.5px solid currentColor; border-top-color: transparent; animation: turn 1.6s linear infinite }
+.blocked .mark { background: currentColor }
+.idle .mark { border: 1.5px solid currentColor }
+.done svg { width: 11px; height: 11px; stroke-width: 2 }
+@keyframes turn { to { transform: rotate(360deg) } }
+
+/* the selected agent's yard: the space's house, the agent's crop bed, and the villager at work */
+.plot { flex: none; width: 212px; margin: auto 8px 8px; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; background: var(--sel) }
+.plot .cap { height: 22px; padding: 0 9px; font-size: 10.5px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; white-space: nowrap }
+.plot .cap b { font-weight: 500; color: var(--fg) }
+.yard { --bx: 12px; --by: 80px; --kx: 97px; --ky: 62px; --ix: 118px; --iy: 90px; position: relative; width: 212px; height: 132px; background: #86c05a center / 212px 132px no-repeat; image-rendering: pixelated; overflow: hidden }
+.yard img { position: absolute; max-width: none; image-rendering: pixelated }
+.yard .crop { width: 10px; height: 12px; z-index: 1 }
+.yard .crop.front { z-index: 3 }
+.walker { position: absolute; z-index: 2; left: calc(var(--bx) + 32px); top: calc(var(--by) - 2px); width: 16px; height: 32px }
+.walker .in { position: absolute; inset: 0 }
+.walker .vil { left: 0; top: 0; width: 16px; height: 32px }
+.walker .strip { position: absolute; left: 0; top: 0; width: 16px; height: 32px; background: var(--walk) 0 0 / 64px 32px no-repeat; image-rendering: pixelated; display: none }
+.plot[data-st="working"] .strip { display: block; animation: stride .86s steps(4) infinite, go 52.1s steps(1) infinite }
+.walker .stand { position: absolute; left: 0; top: 0; width: 16px; height: 32px; background: var(--walk) -16px 0 / 64px 32px no-repeat; image-rendering: pixelated; opacity: 0; display: none }
+.plot[data-st="working"] .stand { display: block; animation: halt 52.1s steps(1) infinite }
+.plot[data-st="working"] .vil { display: none }
+@keyframes pour { 0% { opacity: 1 } 19.28% { opacity: 0 } 26.46% { opacity: 1 } 63.47% { opacity: 0 } 84.46% { opacity: 1 } }
+.walker .pour { position: absolute; inset: 0 }
+.plot[data-st="working"] .pour { animation: pour 52.1s steps(1) infinite }
+@keyframes stride { to { background-position: -64px 0 } }
+.walker .can { left: 11px; top: 19px; width: 9px; height: 7px; display: none }
+.walker .bask { left: 10px; top: 21px; width: 9px; height: 6px; display: none }
+.walker .bang { left: 5px; top: -10px; width: 7px; height: 9px; display: none }
+.walker .zz { position: absolute; left: 14px; top: -4px; font-family: var(--pixel); font-size: 9px; line-height: 1; color: #fffaf0; text-shadow: 0 1px 0 rgba(0,0,0,.35); white-space: nowrap; display: none }
+.walker .drop { position: absolute; left: 21px; top: 22px; width: 1px; height: 2px; background: #bfe6f5; display: none }
+.plot[data-st="working"] .walker { animation: walk 52.1s linear infinite }
+.plot[data-st="working"] .in { animation: face 52.1s steps(1) infinite }
+.plot[data-st="working"] .can, .plot[data-st="working"] .drop { display: block }
+.plot[data-st="working"] .drop { animation: drip .6s linear infinite }
+.plot[data-st="working"] .drop.d2 { left: 20px; animation-delay: .2s }
+.plot[data-st="working"] .drop.d3 { left: 22px; animation-delay: .4s }
+.plot[data-st="blocked"] .walker { left: var(--kx); top: var(--ky) }
+.plot[data-st="blocked"] .bang { display: block; animation: blink 1s steps(2) infinite }
+.plot[data-st="done"] .bask { display: block }
+.plot[data-st="idle"] .walker { left: var(--ix); top: var(--iy) }
+.plot[data-st="idle"] .zz { display: block; animation: snooze 2.4s ease-in-out infinite }
+.yard .tint, .yard .glow { position: absolute; inset: 0; pointer-events: none; display: none }
+.yard .tint { z-index: 4; mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(circle at 104px 52px, rgba(0,0,0,.30) 0 24px, rgba(0,0,0,.55) 24px 36px, rgba(0,0,0,.8) 36px 48px, #000 48px), radial-gradient(circle at 7px 72px, rgba(0,0,0,.30) 0 18px, rgba(0,0,0,.55) 18px 32px, rgba(0,0,0,.8) 32px 46px, #000 46px), radial-gradient(circle at 198px 97px, rgba(0,0,0,.30) 0 16px, rgba(0,0,0,.55) 16px 26px, rgba(0,0,0,.8) 26px 36px, #000 36px); -webkit-mask-composite: source-in; mask-image: radial-gradient(circle at 104px 52px, rgba(0,0,0,.30) 0 24px, rgba(0,0,0,.55) 24px 36px, rgba(0,0,0,.8) 36px 48px, #000 48px), radial-gradient(circle at 7px 72px, rgba(0,0,0,.30) 0 18px, rgba(0,0,0,.55) 18px 32px, rgba(0,0,0,.8) 32px 46px, #000 46px), radial-gradient(circle at 198px 97px, rgba(0,0,0,.30) 0 16px, rgba(0,0,0,.55) 16px 26px, rgba(0,0,0,.8) 26px 36px, #000 36px); mask-composite: intersect }
+.yard .glow { z-index: 5; background: radial-gradient(circle at 104px 52px, rgba(255,186,90,.34) 0 24px, rgba(255,186,90,.17) 24px 36px, rgba(255,186,90,.07) 36px 48px, transparent 48px), radial-gradient(circle at 7px 72px, rgba(255,186,90,.34) 0 18px, rgba(255,186,90,.17) 18px 32px, rgba(255,186,90,.07) 32px 46px, transparent 46px), radial-gradient(circle at 198px 97px, rgba(255,186,90,.34) 0 16px, rgba(255,186,90,.17) 16px 26px, rgba(255,186,90,.07) 26px 36px, transparent 36px) }
+.yard .lit { left: 0; top: 0; width: 212px; height: 132px; z-index: 6; display: none }
+.yard .ff { position: absolute; z-index: 6; width: 1px; height: 1px; background: #fff3a8; box-shadow: 0 0 0 1px rgba(255,236,150,.35); display: none }
+.th[data-m="night"] .yard .tint { display: block; background: rgb(74,84,152) }
+/* the villager carries their own light, so they stay readable wherever they walk */
+.walker .halo { position: absolute; left: -20px; top: -8px; width: 56px; height: 56px; z-index: -1; border-radius: 50%; display: none; background: radial-gradient(circle, rgba(255,216,142,.46) 0 10px, rgba(255,202,122,.26) 10px 18px, rgba(255,202,122,.12) 18px 27px, transparent 27px) }
+.th[data-m="night"] .walker, .th[data-m="dawn"] .walker { z-index: 5 }
+.th[data-m="night"] .walker .halo { display: block }
+.th[data-m="dawn"] .walker .halo { display: block; opacity: .45 }
+.th[data-m="dawn"] .yard .tint { display: block; background: rgb(176,150,186) }
+.th[data-m="night"] .yard .glow, .th[data-m="dawn"] .yard .glow, .th[data-m="night"] .yard .lit, .th[data-m="dawn"] .yard .lit { display: block }
+.th[data-m="dawn"] .yard .glow { opacity: .6 }
+.th[data-m="night"] .yard .ff { display: block; animation: firefly 5s ease-in-out infinite }
+.yard .ff.f2 { animation-delay: 1.3s } .yard .ff.f3 { animation-delay: 2.6s } .yard .ff.f4 { animation-delay: 3.7s }
+@keyframes firefly { 0% { opacity: 0; transform: translate(0, 0) } 30% { opacity: 1 } 60% { opacity: .2; transform: translate(4px, -3px) } 80% { opacity: 1 } 100% { opacity: 0; transform: translate(7px, 1px) } }
+@keyframes walk { 0.00% { left: calc(var(--bx) + -2px); top: calc(var(--by) + -2px) } 6.76% { left: calc(var(--bx) + 30px); top: calc(var(--by) + -2px) } 12.52% { left: calc(var(--bx) + 30px); top: calc(var(--by) + -2px) } 19.27% { left: calc(var(--bx) + 62px); top: calc(var(--by) + -2px) } 26.53% { left: calc(var(--bx) + 96px); top: calc(var(--by) + -7px) } 34.97% { left: calc(var(--bx) + 136px); top: calc(var(--by) + -7px) } 40.73% { left: calc(var(--bx) + 136px); top: calc(var(--by) + -7px) } 48.75% { left: calc(var(--bx) + 174px); top: calc(var(--by) + -7px) } 63.53% { left: calc(var(--bx) + 104px); top: calc(var(--by) + -7px) } 67.54% { left: calc(var(--bx) + 104px); top: calc(var(--by) + 12px) } 75.22% { left: calc(var(--bx) + 104px); top: calc(var(--by) + 12px) } 84.57% { left: calc(var(--bx) + 62px); top: calc(var(--by) + -2px) } 98.08% { left: calc(var(--bx) + -2px); top: calc(var(--by) + -2px) } 100.00% { left: calc(var(--bx) + -2px); top: calc(var(--by) + -2px) } }
+@keyframes face { 0.00% { transform: none } 48.75% { transform: scaleX(-1) } 67.54% { transform: none } 75.22% { transform: scaleX(-1) } 98.08% { transform: none } }
+@keyframes go { 0.00% { opacity: 1 } 6.76% { opacity: 0 } 12.52% { opacity: 1 } 19.27% { opacity: 1 } 26.53% { opacity: 1 } 34.97% { opacity: 0 } 40.73% { opacity: 1 } 48.75% { opacity: 1 } 63.53% { opacity: 1 } 67.54% { opacity: 0 } 75.22% { opacity: 1 } 84.57% { opacity: 1 } 98.08% { opacity: 0 } }
+@keyframes halt { 0.00% { opacity: 0 } 6.76% { opacity: 1 } 12.52% { opacity: 0 } 19.27% { opacity: 0 } 26.53% { opacity: 0 } 34.97% { opacity: 1 } 40.73% { opacity: 0 } 48.75% { opacity: 0 } 63.53% { opacity: 0 } 67.54% { opacity: 1 } 75.22% { opacity: 0 } 84.57% { opacity: 0 } 98.08% { opacity: 1 } }
+@keyframes bob { 0% { top: 0 } 50% { top: -1px } }
+@keyframes drip { 0% { transform: translateY(0); opacity: 1 } 100% { transform: translateY(7px); opacity: 0 } }
+@keyframes blink { 0% { opacity: 1 } 50% { opacity: .25 } }
+@keyframes snooze { 0% { transform: translateY(0); opacity: .95 } 100% { transform: translateY(-7px); opacity: 0 } }
+.plot[data-st="done"] .in { animation: hop 1.6s steps(1) infinite }
+.yard .rip { position: absolute; z-index: 1; height: 1px; background: #c9ecf5; display: none }
+.yard .fly { position: absolute; z-index: 3; left: 150px; top: 74px; width: 3px; height: 2px; background: #fff6c8; box-shadow: 0 0 0 1px rgba(120,80,20,.35); display: none }
+.yard[data-y="homestead"] .rip { display: block; animation: ripple 3.2s ease-in-out infinite }
+.yard[data-y="homestead"] .rip.r2 { animation-delay: 1.6s }
+.yard[data-y="homestead"] .fly { display: block; animation: flutter 9s linear infinite, flap .3s steps(2) infinite }
+@keyframes hop { 0% { top: 0 } 12% { top: -3px } 24% { top: 0 } }
+@keyframes ripple { 0% { opacity: 0; transform: scaleX(.4) } 40% { opacity: .9; transform: scaleX(1) } 100% { opacity: 0; transform: scaleX(1.5) } }
+@keyframes flutter { 0% { left: 128px; top: 76px } 20% { left: 150px; top: 70px } 40% { left: 176px; top: 78px } 60% { left: 192px; top: 68px } 80% { left: 160px; top: 82px } 100% { left: 128px; top: 76px } }
+@keyframes flap { 0% { width: 3px } 50% { width: 1px } }
+.still .plot *, .still .working .mark { animation: none !important }
+.row.ag { cursor: pointer }
+.ygal { display: flex; flex-wrap: wrap; gap: 14px }
+.ygal .plot { margin: 0; background: var(--chrome) }
+.yitem { display: flex; flex-direction: column; gap: 8px; padding: 10px; width: 232px; box-sizing: border-box; border: 1px solid var(--page-line); border-radius: 12px; background: var(--page-raise); color: var(--page-fg); cursor: pointer }
+.yitem[aria-pressed="true"] { border-color: var(--page-fg); box-shadow: 0 0 0 1px var(--page-fg) }
+.yitem:focus-visible { outline: 2px solid var(--page-fg); outline-offset: 2px }
+.yitem .nm { font-size: 13px; font-weight: 600 }
+.yitem .ds { font-size: 12px; color: var(--page-muted); line-height: 1.35; min-height: 2.7em }
+.side-foot { border-top: 1px solid var(--line); padding: 8px 14px 9px; display: flex; flex-direction: column; gap: 6px; color: var(--muted) }
+.side-foot div { display: flex; align-items: center; gap: 8px }
+.side-foot .open { cursor: pointer; border-radius: 5px }
+.side-foot .open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+[hidden] { display: none !important }
+.hvset { position: absolute; left: 8px; bottom: 84px; width: 212px; box-sizing: border-box; z-index: 10; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--canvas); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); font-size: 11.5px; white-space: normal }
+.hvset .hv-t { font-family: var(--pixel); font-size: 12px; color: var(--muted) }
+.hvset button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer }
+.hvset button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px }
+.hvset .sw { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 500 }
+.hvset .sw i { flex: none; width: 26px; height: 14px; border-radius: 7px; background: var(--dim); position: relative; transition: background .15s }
+.hvset .sw i::after { content: ""; position: absolute; left: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--canvas); transition: left .15s }
+.hvset .sw[aria-checked="true"] i { background: var(--working) }
+.hvset .sw[aria-checked="true"] i::after { left: 14px }
+.hvset .box { display: flex; flex-direction: column; gap: 6px; padding-left: 2px }
+.hvset .rad { display: flex; gap: 7px; align-items: flex-start }
+.hvset .rad i { flex: none; width: 10px; height: 10px; margin-top: 2px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--dim) }
+.hvset .rad[aria-pressed="true"] i { box-shadow: inset 0 0 0 3px var(--accent) }
+.hvset .rad span { display: flex; flex-direction: column; gap: 1px }
+.hvset .rad small { color: var(--muted); font-size: 10.5px; line-height: 1.3 }
+.hvset .hv-seg { display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--sel) }
+.hvset .hv-seg button { flex: 1; text-align: center; padding: 3px 0; border-radius: 4px; color: var(--muted) }
+.hvset .hv-seg button[aria-pressed="true"] { background: var(--fg); color: var(--canvas) }
+.hvset hr { border: 0; border-top: 1px solid var(--line); margin: 0 }
+.hvset .hv-l { font-size: 10.5px; color: var(--muted); margin-bottom: -3px }
+.hvset .hv-r { display: flex; align-items: center; gap: 8px }
+.hvset .hv-r span { flex: none; width: 50px }
+.hvset .hv-r input { flex: 1; min-width: 0; height: 14px; margin: 0; accent-color: var(--accent) }
+.hvset .hv-r output { flex: none; width: 30px; text-align: right; color: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums }
+.hvset .hv-i { font-size: 10.5px; color: var(--muted); margin-top: -5px }
+.hvset #set-seasons { font-size: 11px }
+.hvset .hv-pal { display: flex; gap: 6px }
+.hvset .hv-pal button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 4px 5px; border-radius: 7px; color: var(--muted); text-align: center }
+.hvset .hv-pal button[aria-pressed="true"] { color: var(--fg); font-weight: 500; box-shadow: inset 0 0 0 1.5px var(--accent) }
+.hv-pal .chip3 { width: 100%; height: 26px; box-sizing: border-box; border-radius: 5px; padding: 5px; display: flex; align-items: flex-end; gap: 3px; background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line) }
+.hv-pal .chip3 i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent) }
+.hv-pal .chip3 i + i { background: var(--working) }
+
+/* first run: no space and no agent yet */
+.win[data-run="first"] .use-only, .win[data-run="use"] .first-only { display: none }
+.win kbd { font-family: var(--mono); font-size: 10px; line-height: 1; padding: 3px 5px; border-radius: 4px; color: var(--muted); background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap }
+.row.new { color: var(--muted); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); background: var(--sel) }
+.row.new kbd { margin-left: auto }
+.row.new:focus-visible, .go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.none { margin: 0; padding: 2px 14px 0; color: var(--dim); font-size: 11px; line-height: 1.45; white-space: normal }
+.plot[data-st="empty"] .walker, .plot[data-st="empty"] .crop, .plot[data-st="empty"] .psw { display: none }
+.empty { position: relative; z-index: 1; width: 400px; padding: 58px 0 0 58px; display: flex; flex-direction: column; align-items: flex-start; white-space: normal }
+.empty .sprout { width: 36px; height: 36px; stroke: none }
+.empty h3 { margin: 18px 0 0; font-family: var(--pixel); font-weight: 500; font-size: 24px; line-height: 1.15; letter-spacing: .01em }
+.empty .lead { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5 }
+.go { margin-top: 18px; display: inline-flex; align-items: center; gap: 10px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--canvas); background: var(--accent); border: 0; border-radius: 7px; padding: 7px 8px 7px 13px; cursor: pointer }
+.go kbd { color: var(--canvas); background: rgba(255,255,255,.18); box-shadow: none }
+.steps { list-style: none; margin: 30px 0 0; padding: 14px 0 0; width: 100%; display: flex; flex-direction: column; gap: 12px; background: linear-gradient(var(--rake), var(--rake)) 0 0 / 100% 1px no-repeat, linear-gradient(var(--rake), var(--rake)) 0 3px / 100% 1px no-repeat }
+.steps li { display: flex; align-items: center; gap: 12px }
+.steps .ic { flex: none; width: 30px; height: 30px; display: flex; align-items: flex-end; justify-content: center }
+.steps .ic img { width: 24px; height: 24px }
+.steps .ic img.bust { height: 30px } .steps .ic img.crop3 { width: 20px; height: 24px }
+.steps span span { display: flex; flex-direction: column; gap: 1px }
+.steps b { font-weight: 500 }
+.steps small { color: var(--muted); font-size: 11px; line-height: 1.4 }
+.empty .keys { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--dim); font-size: 11px }
+.empty .keys span { display: flex; align-items: center; gap: 6px }
+
+.work { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.tabs { height: 38px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 1px solid var(--line); color: var(--muted) }
+.tab { height: 24px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-radius: 6px }
+.tab .face { width: 16px; height: 16px; margin: 0 -1px 0 -4px }
+.tab.on { color: var(--fg); background: var(--sel); box-shadow: inset 0 0 0 1px var(--line); font-weight: 500 }
+.tabs .gap { margin-left: auto }
+.tool { height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px }
+.body { position: relative; flex: 1; min-height: 0; display: flex; gap: 8px; padding: 8px; overflow: hidden }
+.body::after { content: ""; position: absolute; right: 0; bottom: 0; width: 680px; height: 340px; background: var(--scene) right bottom / 680px 340px no-repeat; image-rendering: pixelated; pointer-events: none; -webkit-mask-image: linear-gradient(to right, transparent, #000 24%), linear-gradient(to bottom, transparent, #000 20%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 24%), linear-gradient(to bottom, transparent, #000 20%); mask-composite: intersect }
+/* the picture can be faded and blurred so text over it stays easy to read; the nudge keeps the blurred edge off screen */
+.body::after, .body > .wx { opacity: var(--pic-o, 1); filter: blur(var(--pic-b, 0px)); transform: translate(calc(var(--pic-b, 0px) * 2), calc(var(--pic-b, 0px) * 2)) }
+/* seasons: what falls through the air. Petals in spring, leaves in autumn, snow in winter; nothing in summer */
+.wx { position: absolute; pointer-events: none; overflow: hidden; display: none }
+.wx i { position: absolute; top: -4px; animation: fall var(--d) linear var(--dl) infinite }
+.body > .wx { z-index: 1; right: 0; bottom: 0; width: 680px; height: 340px; -webkit-mask-image: linear-gradient(to right, transparent, #000 24%), linear-gradient(to bottom, transparent, #000 20%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 24%), linear-gradient(to bottom, transparent, #000 20%); mask-composite: intersect }
+.body > .wx i { width: 2px; height: 2px }
+.yard .wx { inset: 0; z-index: 3 }
+.yard .wx i { width: 1px; height: 1px; animation-name: yfall }
+.th[data-s="spring"] .wx, .th[data-s="autumn"] .wx, .th[data-s="winter"] .wx { display: block }
+.th[data-s="spring"] .wx i:nth-child(n+9), .th[data-s="autumn"] .wx i:nth-child(n+11) { display: none }
+.th[data-s="spring"] .body > .wx i { background: color-mix(in srgb, #e58aa6 62%, var(--canvas)) }
+.th[data-s="autumn"] .body > .wx i { width: 4px; background: color-mix(in srgb, #d9822b 72%, var(--canvas)) }
+.th[data-s="autumn"] .body > .wx i:nth-child(3n) { background: color-mix(in srgb, #c4532a 72%, var(--canvas)) }
+.th[data-s="autumn"] .body > .wx i:nth-child(3n+1) { background: color-mix(in srgb, #e0aa3a 72%, var(--canvas)) }
+.th[data-s="winter"] .body > .wx i { background: color-mix(in srgb, var(--blue) 30%, var(--canvas)) }
+.th[data-s="winter"][data-m="night"] .body > .wx i { background: color-mix(in srgb, var(--fg) 62%, var(--canvas)) }
+.th[data-s="spring"] .yard .wx i { width: 2px; background: #fbd0dd }
+.th[data-s="spring"] .yard .wx i:nth-child(2n) { background: #ffffff }
+.th[data-s="autumn"] .yard .wx i { width: 2px; background: #e8862e }
+.th[data-s="autumn"] .yard .wx i:nth-child(3n) { background: #c9472b }
+.th[data-s="autumn"] .yard .wx i:nth-child(3n+1) { background: #f1c040 }
+.th[data-s="winter"] .yard .wx i { background: #ffffff }
+.th[data-s="winter"] .yard .wx i:nth-child(3n) { width: 2px; height: 2px }
+@keyframes fall { 0% { transform: translate(0, 0) } 25% { transform: translate(var(--sw), 87px) } 50% { transform: translate(0, 174px) } 75% { transform: translate(var(--sw), 261px) } 100% { transform: translate(0, 348px) } }
+@keyframes yfall { 0% { transform: translate(0, 0) } 25% { transform: translate(var(--sw), 35px) } 50% { transform: translate(0, 70px) } 75% { transform: translate(var(--sw), 105px) } 100% { transform: translate(0, 140px) } }
+.still .wx i, .still .plot .wx i { animation: fall var(--d) linear var(--dl) infinite paused !important }
+.still .plot .wx i { animation-name: yfall !important }
+.th[data-s="winter"] .yard .rip, .th[data-s="winter"] .yard .fly, .th[data-s="autumn"] .yard .fly, .th[data-s="winter"] .yard .ff, .th[data-s="autumn"] .yard .ff { display: none !important }
+/* winter work: the villager clears snow with a shovel instead of watering, and tosses it at each stop */
+.walker .shov { left: 8px; top: 18px; width: 14px; height: 12px; display: none }
+.th[data-s="winter"] .plot[data-st="working"] .can { display: none }
+.th[data-s="winter"] .plot[data-st="working"] .shov { display: block }
+.th[data-s="winter"] .plot[data-st="working"] .shov.push { animation: go 52.1s steps(1) infinite }
+.th[data-s="winter"] .plot[data-st="working"] .shov.dig { opacity: 0; animation: halt 52.1s steps(1) infinite, scoop .9s steps(1) infinite }
+.th[data-s="winter"] .plot[data-st="working"] .pour { animation-name: halt }
+.th[data-s="winter"] .plot[data-st="working"] .drop { left: 20px; top: 21px; width: 2px; height: 2px; background: #fff; animation: toss .9s linear infinite }
+.th[data-s="winter"] .plot[data-st="working"] .drop.d2 { left: 22px; animation-delay: .12s }
+.th[data-s="winter"] .plot[data-st="working"] .drop.d3 { left: 19px; top: 23px; animation-delay: .24s }
+@keyframes scoop { 0% { transform: translate(0, 0) } 50% { transform: translate(2px, -5px) } }
+@keyframes toss { 0%, 49% { transform: translate(0, 0); opacity: 0 } 50% { transform: translate(1px, -5px); opacity: 1 } 100% { transform: translate(9px, -12px); opacity: 0 } }
+/* snow and golden grass are brighter than summer grass, so the yard is dimmed a little more after dark */
+.yard::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; mix-blend-mode: multiply; display: none }
+.th[data-s="winter"][data-m="night"] .yard::after { display: block; background: rgb(142,150,200) }
+.th[data-s="winter"][data-m="dawn"] .yard::after { display: block; background: rgb(226,214,228) }
+.th[data-s="autumn"][data-m="night"] .yard::after { display: block; background: rgb(196,192,214) }
+.th[data-s="winter"][data-m="night"] .yard .glow { opacity: .55 }
+.th[data-s="autumn"][data-m="night"] .yard .glow { opacity: .7 }
+.pane { position: relative; z-index: 1; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px }
+.pane.focus { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)) }
+.pane-h { height: 26px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted) }
+.pane-h b { font-weight: 500; color: var(--fg) }
+.term { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 12px 14px; font-family: var(--mono); font-size: 11.5px; line-height: 1.65; white-space: pre }
+.term > div { white-space: pre }
+.term { overflow: hidden }
+.term > div.full { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end }
+.term > #t-side.full { justify-content: flex-start }
+.rm { color: var(--blocked); background: color-mix(in srgb, var(--blocked) 12%, transparent) }
+.ad { color: var(--working); background: color-mix(in srgb, var(--working) 13%, transparent) }
+.m { color: var(--muted) } .d { color: var(--dim) } .a { color: var(--accent) } .g { color: var(--working) } .y { color: var(--done) } .b { color: var(--blue) } .w { font-weight: 700 }
+.cur { background: var(--fg); color: var(--canvas) }
+.inp { border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; margin: 10px 0 8px; color: var(--muted) }
+.chip { border-radius: 2px }
+.chip.ca { color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent) }
+.chip.cg { color: var(--working); background: color-mix(in srgb, var(--working) 16%, transparent) }
+.chip.cy { color: var(--done); background: color-mix(in srgb, var(--done) 18%, transparent) }
+.chip.cn { color: var(--fg); background: color-mix(in srgb, var(--fg) 8%, transparent) }
+.chips { line-height: 1.9 }
+.spr { display: flex; gap: 1ch; line-height: 1.5 }
+.spr img { flex: none; image-rendering: pixelated; max-width: none }
+.fgc { color: var(--fg) }
+.em { display: inline-block; width: 2ch; text-align: center }
+
+/* ---------- status line chooser ---------- */
+.slsec { display: flex; flex-direction: column; gap: 10px }
+.slsec h2 { margin: 0; font-size: 14px; font-weight: 600 }
+.slsec p { margin: 0; color: var(--page-muted); max-width: 70ch }
+.slgal { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 10px; padding: 12px; background: var(--canvas); color: var(--fg); border: 1px solid var(--line); border-radius: 12px }
+.slitem { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer }
+.slitem[aria-pressed="true"] { border-color: var(--accent); background: var(--sel) }
+.slitem:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.slitem .nm { font-family: var(--ui); font-size: 12px; font-weight: 600 }
+.slitem .nm small { font-weight: 400; font-size: 11.5px; color: var(--muted); margin-left: 6px }
+.slitem .tx { font-family: var(--mono); font-size: 11.5px; line-height: 1.65; white-space: pre; overflow-x: auto }
+.slitem .tx .spr { line-height: 1.5 }
+.th[data-m] .tod { display: none }
+.th[data-m="dawn"] .tod.dw, .th[data-m="day"] .tod.dy, .th[data-m="night"] .tod.n { display: inline-flex }
+.bar { height: 24px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; background: var(--chrome) }
+.bar .gap { margin-left: auto; display: flex; align-items: center; gap: 6px }
+.bar svg { width: 12px; height: 12px; color: var(--done) }
+
+/* ---------- sprite set ---------- */
+.set { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+.card { background: var(--page-raise); border: 1px solid var(--page-line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0 }
+.card h2 { margin: 0; font-size: 14px; font-weight: 600 }
+.card p { margin: 0; color: var(--page-muted) }
+.sprites { display: flex; flex-wrap: wrap; gap: 8px }
+.sprites figure { width: 54px; text-align: center; line-height: 1.25 }
+.sprites figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--page-muted) }
+.sprites img[src*="/v-"] { height: 96px }
+.sprites img { width: 48px; height: 48px; image-rendering: pixelated }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Herdewvalley</h1>
+      <p>A quiet garden for Herdr. Pick a palette, a season, and a time of day; the window below restyles in place.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Palette">
+        <button type="button" id="v-paper" data-v="paper" aria-pressed="false">Paper</button>
+        <button type="button" id="v-sand" data-v="sand" aria-pressed="true">Sand</button>
+        <button type="button" id="v-blossom" data-v="blossom" aria-pressed="false">Blossom</button>
+      </div>
+      <div class="seg" role="group" aria-label="Season">
+        <button type="button" id="s-auto" aria-pressed="true">Auto</button>
+        <button type="button" id="s-spring" aria-pressed="false">Spring</button>
+        <button type="button" id="s-summer" aria-pressed="false">Summer</button>
+        <button type="button" id="s-autumn" aria-pressed="false">Autumn</button>
+        <button type="button" id="s-winter" aria-pressed="false">Winter</button>
+      </div>
+      <div class="seg" role="group" aria-label="State">
+        <button type="button" id="r-use" aria-pressed="true">In use</button>
+        <button type="button" id="r-first" aria-pressed="false">First run</button>
+      </div>
+      <div class="seg" role="group" aria-label="Background picture">
+        <button type="button" id="k-sharp" aria-pressed="false">Picture sharp</button>
+        <button type="button" id="k-faded" aria-pressed="false">Faded</button>
+        <button type="button" id="k-blurred" aria-pressed="false">Blurred</button>
+        <button type="button" id="k-soft" aria-pressed="true">Soft</button>
+      </div>
+      <div class="seg" role="group" aria-label="Session">
+        <button type="button" id="x-short" aria-pressed="true">Short session</button>
+        <button type="button" id="x-full" aria-pressed="false">Full of text</button>
+      </div>
+      <div class="seg" role="group" aria-label="Motion">
+        <button type="button" id="mo-on" aria-pressed="true">Motion on</button>
+        <button type="button" id="mo-off" aria-pressed="false">Off</button>
+      </div>
+      <div class="seg" role="group" aria-label="Time of day">
+        <button type="button" id="m-auto" aria-pressed="true">Auto</button>
+        <button type="button" id="m-dawn" data-m="dawn" aria-pressed="false">Dawn</button>
+        <button type="button" id="m-day" data-m="day" aria-pressed="false">Day</button>
+        <button type="button" id="m-night" data-m="night" aria-pressed="false">Night</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage"><div class="fit" id="fit">
+    <div class="win th" id="win" data-v="sand" data-m="day" data-s="summer" data-run="use">
+      <div class="side">
+        <div class="side-top">
+          <span class="light" style="background:#ff5f57"></span><span class="light" style="background:#febc2e"></span><span class="light" style="background:#28c840"></span>
+          <span class="brand">
+            <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><g fill="var(--working)"><rect x="1" y="1" width="2" height="1"/><rect x="0" y="2" width="4" height="1"/><rect x="1" y="3" width="3" height="1"/><rect x="6" y="0" width="2" height="1"/><rect x="5" y="1" width="4" height="1"/><rect x="5" y="2" width="3" height="1"/><rect x="4" y="3" width="1" height="4"/></g><rect x="2" y="7" width="5" height="1" fill="var(--accent)"/><rect x="3" y="8" width="3" height="1" fill="var(--accent)"/></svg>
+            herdewvalley
+          </span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></svg>
+        </div>
+
+        <div class="sec"><span>Spaces</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></div>
+        <div class="rows first-only">
+          <div class="row new" id="new-space-row" role="button" tabindex="0"><img src="art/h-lot.png" alt=""><span class="name">New space</span><kbd>⌘N</kbd></div>
+        </div>
+        <div class="rows use-only">
+          <div class="row sel"><img src="art/h-farmhouse.png" alt=""><span class="name">keybinds</span><span class="count">3</span></div>
+          <div class="row"><img src="art/h-cabin.png" alt=""><span class="name">~</span><span class="count">1</span></div>
+          <div class="row"><img src="art/h-barn.png" alt=""><span class="name">website</span><span class="count">2</span></div>
+          <div class="row"><img src="art/h-greenhouse.png" alt=""><span class="name">experiments</span><span class="count">1</span></div>
+        </div>
+
+        <div class="sec rule"><span>Agents</span><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg></div>
+        <p class="none first-only">No agent status yet. Agents show up here when they report their status.</p>
+        <div class="rows use-only">
+          <div class="row ag sel"><img src="art/v-farmer-bust.png" alt=""><span class="two"><span><span class="name">Claude Code</span><span class="st working"><span class="mark"></span></span></span><span><span class="sub">keybinds · 1</span><span class="st working">working</span></span></span></div>
+          <div class="row ag"><img src="art/v-tinker-bust.png" alt=""><span class="two"><span><span class="name">Codex</span><span class="st blocked"><span class="mark"></span></span></span><span><span class="sub">keybinds · fix login</span><span class="st blocked">blocked</span></span></span></div>
+          <div class="row ag"><img src="art/v-gardener-bust.png" alt=""><span class="two"><span><span class="name">OpenCode</span><span class="st done"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></span></span><span><span class="sub">website · 2</span><span class="st done">done</span></span></span></div>
+          <div class="row ag"><img src="art/v-elder-bust.png" alt=""><span class="two"><span><span class="name">Gemini</span><span class="st idle"><span class="mark"></span></span></span><span><span class="sub">experiments · 1</span><span class="st idle">idle</span></span></span></div>
+        </div>
+
+        <div class="plot" id="plot"></div>
+        <div class="hvset" id="hvset" hidden>
+          <div class="hv-t">herdewvalley</div>
+          <div class="hv-l">Palette</div>
+          <div class="hv-pal" id="set-pal"><button type="button" data-v="paper"><span class="th chip3" data-v="paper" data-m="day"><i></i><i></i></span>Paper</button><button type="button" data-v="sand"><span class="th chip3" data-v="sand" data-m="day"><i></i><i></i></span>Sand</button><button type="button" data-v="blossom"><span class="th chip3" data-v="blossom" data-m="day"><i></i><i></i></span>Blossom</button></div>
+          <hr>
+          <button type="button" class="sw" id="set-season" role="switch" aria-checked="true"><span>Follow the seasons</span><i></i></button>
+          <div class="hv-i" id="season-info">Now: summer</div>
+          <div class="hv-seg" id="set-seasons" hidden><button type="button" data-s="spring">Spring</button><button type="button" data-s="summer">Summer</button><button type="button" data-s="autumn">Autumn</button><button type="button" data-s="winter">Winter</button></div>
+          <hr>
+          <button type="button" class="sw" id="set-auto" role="switch" aria-checked="true"><span>Follow the time of day</span><i></i></button>
+          <div class="box" id="set-autobox">
+            <button type="button" class="rad" id="set-sun" aria-pressed="true"><i></i><span><b>Sunrise and sunset</b><small id="sun-info">from your time zone</small></span></button>
+            <button type="button" class="rad" id="set-hours" aria-pressed="false"><i></i><span><b>Fixed hours</b><small>Dawn 5:30 am, day 8:00 am, night 6:00 pm</small></span></button>
+          </div>
+          <div class="hv-seg" id="set-manual" hidden><button type="button" data-m="dawn">Dawn</button><button type="button" data-m="day">Day</button><button type="button" data-m="night">Night</button></div>
+          <hr>
+          <div class="hv-l">Background picture</div>
+          <label class="hv-r"><span>Strength</span><input type="range" id="set-pico" min="20" max="100" step="5" value="65"><output id="out-pico">65%</output></label>
+          <label class="hv-r"><span>Blur</span><input type="range" id="set-picb" min="0" max="3" step="0.5" value="1.5"><output id="out-picb">1.5</output></label>
+          <hr>
+          <button type="button" class="sw" id="set-motion" role="switch" aria-checked="true"><span>Animations</span><i></i></button>
+        </div>
+        <div class="side-foot">
+          <div id="hv-open"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" style="stroke:none"><g fill="var(--working)"><rect x="1" y="1" width="2" height="1"/><rect x="0" y="2" width="4" height="1"/><rect x="1" y="3" width="3" height="1"/><rect x="6" y="0" width="2" height="1"/><rect x="5" y="1" width="4" height="1"/><rect x="5" y="2" width="3" height="1"/><rect x="4" y="3" width="1" height="4"/></g><rect x="2" y="7" width="5" height="1" fill="var(--accent)"/><rect x="3" y="8" width="3" height="1" fill="var(--accent)"/></svg>Herdewvalley</div>
+          <div title="Opens Herdr's own settings, unchanged"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/></svg>Settings</div>
+          <div><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Add machine</div>
+        </div>
+      </div>
+
+      <div class="work">
+        <div class="tabs">
+          <span class="tab on use-only"><img class="face" src="art/v-farmer-face.png" alt="Claude Code">1 <span class="st working"><span class="mark"></span></span></span>
+          <span class="tab use-only"><img class="face" src="art/v-tinker-face.png" alt="Codex">fix login <span class="st blocked"><span class="mark"></span></span></span>
+          <span class="tab use-only">3</span>
+          <span class="tool"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></span>
+          <span class="tool gap"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/></svg>Files</span>
+          <span class="tool"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="4.5" cy="4" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/><circle cx="11.5" cy="6" r="1.5"/><path d="M4.5 5.5v5M11.5 7.5c0 2-3 2-7 2.5"/></svg>Changes</span>
+        </div>
+
+        <div class="body">
+          <div class="wx" id="wx" aria-hidden="true"></div>
+          <div class="empty first-only">
+            <svg class="sprout" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><g fill="var(--working)"><rect x="1" y="1" width="2" height="1"/><rect x="0" y="2" width="4" height="1"/><rect x="1" y="3" width="3" height="1"/><rect x="6" y="0" width="2" height="1"/><rect x="5" y="1" width="4" height="1"/><rect x="5" y="2" width="3" height="1"/><rect x="4" y="3" width="1" height="4"/></g><rect x="2" y="7" width="5" height="1" fill="var(--accent)"/><rect x="3" y="8" width="3" height="1" fill="var(--accent)"/></svg>
+            <h3>Nothing planted yet</h3>
+            <p class="lead">A space is a place to work: a folder, its tabs, and the agents you start there. Open one and it gets a home in the valley.</p>
+            <button type="button" class="go" id="new-space">New space <kbd>⌘N</kbd></button>
+            <ol class="steps">
+              <li><span class="ic"><img src="art/h-farmhouse.png" alt=""></span><span><span><b>Open a space</b><small>It gets a home in the sidebar.</small></span></span></li>
+              <li><span class="ic"><img class="bust" src="art/v-farmer-bust.png" alt=""></span><span><span><b>Start an agent</b><small>A villager moves in. The + in the tab bar starts any agent you have installed.</small></span></span></li>
+              <li><span class="ic"><img class="crop3" src="art/p-3.png" alt=""></span><span><span><b>Watch the yard</b><small>It shows how the work is going: watering while working, a “!” when blocked, a harvest when done.</small></span></span></li>
+            </ol>
+            <div class="keys"><span><kbd>⌘⇧P</kbd>Palette</span><span><kbd>⌘,</kbd>Settings</span><span><kbd>⌘/</kbd>Help</span></div>
+          </div>
+          <div class="pane focus use-only" style="flex:1.25">
+            <div class="pane-h"><b>Claude Code</b><span>~/.config/herdr-app</span><span class="st working" style="margin-left:auto"><span class="mark"></span></span></div>
+            <div class="term"><div id="t-main"><span class="m">&gt; add vim keys for moving between panes</span>
+
+<span><span class="g">●</span> Added 18 bindings to keys.json.</span>
+<span class="m">  alt-h  alt-j  alt-k  alt-l   move between panes</span>
+<span class="m">  alt-v  alt-s                 split right, split down</span>
+
+<span><span class="g">●</span> Herdr accepted the file with no errors.</span></div><div><div class="inp">&gt; <span class="cur"> </span></div><div class="sl" id="sl"></div><span class="y">▸▸ auto mode on</span> <span class="m">(shift+tab to cycle)</span></div></div>
+          </div>
+          <div class="pane use-only" style="flex:1">
+            <div class="pane-h"><b>zsh</b><span>~/.config/herdr-app</span></div>
+            <div class="term"><div id="t-side"><span><span class="b w">herdr-app</span> <span class="a">❯</span> git status -s</span>
+<span><span class="y"> M</span> keys.json</span>
+<span><span class="g">??</span> themes/herdewvalley.json</span>
+<span><span class="g">??</span> layouts/herdewvalley.json</span>
+
+<span><span class="b w">herdr-app</span> <span class="a">❯</span> <span class="cur"> </span></span></div></div>
+          </div>
+        </div>
+
+        <div class="bar">
+          <span>This Mac</span><span class="use-only">main</span><span class="use-only">4 agents</span>
+          <span class="gap tod dw"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12h12M4.5 12a3.5 3.5 0 0 1 7 0M8 4.5V6M3.4 7.4l1 1M12.6 7.4l-1 1"/></svg>6:10 am</span>
+          <span class="gap tod dy"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>5:20 pm</span>
+          <span class="gap tod n"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3 5.5 5.5 0 1 0 13 9.5Z"/></svg>9:40 pm</span>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="set">
+    <div class="card">
+      <h2>Villagers</h2>
+      <p>One per agent program, drawn the way farm-game villagers are. The sidebar shows each from the waist up, and a tab with an agent in it shows that villager's face. They dress for the season: lighter colours in spring, warm ones and a scarf in autumn, and a coat, scarf, and mittens in winter.</p>
+      <div class="sprites">
+        <figure><img src="art/v-farmer.png" alt="Villager in a straw hat"><span>Claude Code</span></figure>
+        <figure><img src="art/v-tinker.png" alt="Villager with goggles"><span>Codex</span></figure>
+        <figure><img src="art/v-gardener.png" alt="Villager with a flower in her hair"><span>OpenCode</span></figure>
+        <figure><img src="art/v-elder.png" alt="Villager with a white beard"><span>Gemini</span></figure>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Homes</h2>
+      <p>Each space gets a home when you create it and keeps it when you rename or reorder.</p>
+      <div class="sprites">
+        <figure><img src="art/h-farmhouse.png" alt="Farmhouse with a red roof"><span>Farmhouse</span></figure>
+        <figure><img src="art/h-cabin.png" alt="Log cabin with a thatched roof"><span>Cabin</span></figure>
+        <figure><img src="art/h-barn.png" alt="Red barn"><span>Barn</span></figure>
+        <figure><img src="art/h-greenhouse.png" alt="Glass greenhouse"><span>Greenhouse</span></figure>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Status line: Gardener</h2>
+      <p>🧑‍🌾 the model, your gardener. 🏡 the folder, a home like the spaces in the sidebar. 🌿 the git branch. 🪙 what the session has cost. 🌅 ☀️ 🌙 session time, with the sky for the time of day.</p>
+      <p>🪴 how full the context is; the plant grows from 🌱 to 🌿 to 🪴 to 🌳. 💧 your 5-hour usage. 🌾 your 7-day usage. The third line names each meter and says when the two limits reset.</p>
+    </div>
+    <div class="card">
+      <h2>First run</h2>
+      <p>Switch State to First run to see the window before any space or agent exists. The yard is an empty plot: a staked-out lot with a signpost, bare beds, and nobody in it yet.</p>
+      <p>New space in the sidebar or in the middle of the window builds the first home. The same look returns whenever every space is closed.</p>
+    </div>
+    <div class="card">
+      <h2>Text over the picture</h2>
+      <p>The valley sits behind the panes, so it is shown soft: at 65% strength with a light blur. Hard pixel edges, stars, and falling leaves then stop looking like punctuation in the text.</p>
+      <p>Use the Background picture switch above to compare sharp, faded, blurred, and soft, with Session set to Full of text. The Herdewvalley panel has a strength and a blur slider to set your own.</p>
+    </div>
+    <div class="card">
+      <h2>Four seasons</h2>
+      <p>The valley and the yard follow the calendar. Spring: trees in blossom, tulips, seedlings, petals in the air. Summer: the valley as it was, with sunflowers in the yard. Autumn: orange and gold trees, pumpkins, falling leaves, a full moon. Winter: snow on the roof, bare trees, a frozen pond, a snowman.</p>
+      <p>Winter work is different too. A working villager clears snow with a shovel instead of watering, each crop sits under a glass cover, and the flower bed is wrapped in burlap.</p>
+      <p>Seasons start on 20 March, 21 June, 22 September, and 21 December, and are swapped south of the equator. Open Herdewvalley in the sidebar to hold one season all year.</p>
+    </div>
+    <div class="card">
+      <h2>Dawn, day, and night</h2>
+      <p>The palette, the valley, and the sun or moon in the status line change together. At dawn the sun comes up between the peaks, mist lies in the valley, and a rooster is on the fence. At night the windows light up and fireflies come out.</p>
+      <p>With Auto on, the look follows your clock: dawn from half an hour before sunrise, day from an hour and a half after it, and night from sunset. Open Herdewvalley at the bottom of the sidebar to choose Paper, Sand, or Blossom, hold a season, switch to fixed hours, pick a look by hand, or turn the animations off. Settings below it stays Herdr's own.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var win = document.getElementById('win'), stage = document.getElementById('stage'), slot = document.getElementById('sl');
+  var vs = ['paper', 'sand', 'blossom'], ms = ['dawn', 'day', 'night'];
+  var auto = true, sunMode = 'sun', first = false;
+  var sn = ['spring', 'summer', 'autumn', 'winter'], sAuto = true, season = 'summer';
+  // a rough place for each time zone, so sunrise and sunset can be worked out without asking for a location
+  var ZONES = { 'America/Mazatlan': [23.2, -106.4], 'America/Phoenix': [33.4, -112.1], 'America/Hermosillo': [29.1, -110.9], 'America/Los_Angeles': [34.1, -118.2], 'America/Tijuana': [32.5, -117.0],
+    'America/Denver': [39.7, -105.0], 'America/Chicago': [41.9, -87.6], 'America/Mexico_City': [19.4, -99.1], 'America/New_York': [40.7, -74.0],
+    'America/Bogota': [4.7, -74.1], 'America/Sao_Paulo': [-23.5, -46.6], 'Europe/London': [51.5, -0.1], 'Europe/Madrid': [40.4, -3.7], 'Europe/Berlin': [52.5, 13.4],
+    'Asia/Kolkata': [28.6, 77.2], 'Asia/Tokyo': [35.7, 139.7], 'Australia/Sydney': [-33.9, 151.2] };
+  function sunTimes(d) {
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+    var off = -d.getTimezoneOffset() / 60, pos = ZONES[tz] || [35, off * 15];
+    var n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5), rad = Math.PI / 180;
+    var decl = -23.44 * Math.cos(2 * Math.PI / 365 * (n + 10));
+    var b = 2 * Math.PI * (n - 81) / 364, eot = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+    var x = (Math.sin(-0.833 * rad) - Math.sin(pos[0] * rad) * Math.sin(decl * rad)) / (Math.cos(pos[0] * rad) * Math.cos(decl * rad)), half = Math.acos(Math.max(-1, Math.min(1, x))) / rad / 15;
+    var noon = 12 + (off * 15 - pos[1]) / 15 - eot / 60;
+    return { rise: noon - half, set: noon + half };
+  }
+  // the season from the date; the time zone's rough latitude says which side of the equator this is
+  function seasonOf(d) {
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+    var pos = ZONES[tz] || [35, 0], md = (d.getMonth() + 1) * 100 + d.getDate();
+    var k = md >= 320 && md < 621 ? 0 : (md >= 621 && md < 922 ? 1 : (md >= 922 && md < 1221 ? 2 : 3));
+    return sn[(k + (pos[0] < 0 ? 2 : 0)) % 4];
+  }
+  season = seasonOf(new Date());
+  // every villager picture on the page wears the season's clothes
+  function dress() {
+    Array.prototype.forEach.call(document.querySelectorAll('img[src*="art/v-"]'), function (im) {
+      var now = im.getAttribute('src'), want = now.replace(/art\/(v-[a-z]+?)(?:-(?:spring|summer|autumn|winter))?(-bust|-face)?\.png/, function (m, who, part) { return 'art/' + who + '-' + season + (part || '') + '.png'; });
+      if (want !== now) im.setAttribute('src', want);
+    });
+  }
+  function look() {
+    win.dataset.s = season; dress();
+    win.style.setProperty('--scene', 'url(art/scene-' + win.dataset.v + '-' + win.dataset.m + '-' + season + '.png)');
+  }
+  function phases(d) {
+    if (sunMode === 'hours') return [5.5, 8, 18];
+    var s = sunTimes(d); return [s.rise - 0.5, s.rise + 1.5, s.set];
+  }
+  function clock(h) {
+    var m = Math.round(h * 60), hh = Math.floor(m / 60) % 24, mm = m % 60;
+    return (hh % 12 || 12) + ':' + (mm < 10 ? '0' : '') + mm + ' ' + (hh >= 12 ? 'pm' : 'am');
+  }
+  function tod(a, b, d) { return '<span class="tod dw">' + a + '</span><span class="tod dy">' + b + '</span><span class="tod n">' + d + '</span>'; }
+  var SKY = tod('🌅', '☀️', '🌙'), CLOCK = tod('6:10 am', '5:20 pm', '9:40 pm');
+  function c(k, t) { return '<span class="' + k + '">' + t + '</span>'; }
+  function rep(ch, n) { return new Array(n + 1).join(ch); }
+  function line(n, k) { return c(k, rep('━', n)) + c('d', rep('─', 10 - n)); }
+  function pad(t) { return t + rep(' ', 20 - t.length); }
+  var DOT = ' ' + c('d', '·') + ' ';
+  var WHO = '🧑‍🌾 ' + c('w', 'Fable 5.2'), HOME = '🏡 herdr-app', BRANCH = '🌿 ' + c('g', 'main'), COINS = '🪙 ' + c('y', '$2.61'), TIME = SKY + ' ' + c('m', '2h 02m');
+  var SL = [
+    ['gardener', 'Gardener', 'an emoji for each thing, raked meters, and a line that says what each meter is',
+      WHO + '  ' + HOME + '  ' + BRANCH + '  ' + COINS + '  ' + TIME + '\n' +
+      '🪴 ' + line(6, 'y') + ' 62%   💧 ' + line(2, 'g') + ' 21%   🌾 ' + line(3, 'g') + ' 25%\n' +
+      c('m', pad('context used') + pad('5h · resets 7:40pm') + 'week · resets Mon')]
+  ];
+  SL.forEach(function (x) { x[3] = x[3].replace(/(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)/gu, '<span class="em">$1</span>'); });
+  var ss = SL.map(function (x) { return x[0]; }), cur = 'gardener';
+  function dark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function apply(v, m, keep, s) {
+    cur = s || cur;
+    win.dataset.v = v; win.dataset.m = m;
+    look();
+    SL.forEach(function (x) { if (x[0] === cur) slot.innerHTML = x[3]; });
+    vs.forEach(function (x) { document.getElementById('v-' + x).setAttribute('aria-pressed', String(x === v)); });
+    ms.forEach(function (x) { document.getElementById('m-' + x).setAttribute('aria-pressed', String(!auto && x === m)); });
+    document.getElementById('m-auto').setAttribute('aria-pressed', String(auto));
+    syncSet();
+    if (!keep) { try { history.replaceState(null, '', '#' + v + '-' + m + (first ? '-first' : '') + (sAuto ? '' : '-' + season)); } catch (e) {} }
+  }
+  function fromHash() {
+    var p = (location.hash || '').replace('#', '').split('-');
+    if (vs.indexOf(p[0]) >= 0 && ms.indexOf(p[1]) >= 0) {
+      var rest = p.slice(2), se = rest.filter(function (t) { return sn.indexOf(t) >= 0; })[0];
+      auto = false;
+      if (se) { sAuto = false; season = se; }
+      setRun(rest.indexOf('first') >= 0); apply(p[0], p[1], true); setFull(rest.indexOf('full') >= 0);
+      Object.keys(PIC).forEach(function (k) { if (rest.indexOf(k) >= 0) setPic(PIC[k][0], PIC[k][1]); });
+      AG.forEach(function (a, i) { if (rest.indexOf(a[1]) >= 0) pick(i); });
+      return true;
+    }
+    return false;
+  }
+  vs.forEach(function (x) { document.getElementById('v-' + x).addEventListener('click', function () { apply(x, win.dataset.m); }); });
+  ms.forEach(function (x) { document.getElementById('m-' + x).addEventListener('click', function () { auto = false; apply(win.dataset.v, x); tick(); }); });
+  document.getElementById('m-auto').addEventListener('click', function () { auto = true; tick(); });
+  function setSeason(s, isAuto) { sAuto = isAuto; season = s; apply(win.dataset.v, win.dataset.m, auto && isAuto); refresh(); }
+  sn.forEach(function (x) { document.getElementById('s-' + x).addEventListener('click', function () { setSeason(x, false); }); });
+  document.getElementById('s-auto').addEventListener('click', function () { setSeason(seasonOf(new Date()), true); });
+  // things that fall: the same pieces are petals, leaves, or snow, depending on the season
+  function flakes(n, w, seed) {
+    var h = '', r = seed;
+    function rnd() { r = (r * 9301 + 49297) % 233280; return r / 233280; }
+    for (var i = 0; i < n; i++) { var d = 13 + rnd() * 13; h += '<i style="left:' + Math.round(rnd() * (w - 4)) + 'px;--d:' + d.toFixed(1) + 's;--dl:-' + (rnd() * d).toFixed(1) + 's;--sw:' + Math.round(6 + rnd() * 16) * (rnd() < 0.5 ? -1 : 1) + 'px"></i>'; }
+    return h;
+  }
+  document.getElementById('wx').innerHTML = flakes(22, 680, 7);
+  var AG = [['Claude Code', 'working', 'v-farmer', 'p-2 p-3 p-3 p-2 p-3 p-1 p-2 p-3 p-2 p-1', 'farmhouse', 'keybinds'],
+            ['Codex', 'blocked', 'v-tinker', 'p-3 p-2 p-3 p-wilt p-2 p-2 p-3 p-wilt p-2 p-3', 'farmhouse', 'keybinds'],
+            ['OpenCode', 'done', 'v-gardener', 'p-4 p-4 p-4 p-4 p-4 p-4 p-4 p-4 p-4 p-4', 'barn', 'website'],
+            ['Gemini', 'idle', 'v-elder', 'p-1 p-1 p-2 p-1 p-1 p-1 p-2 p-1 p-1 p-1', 'greenhouse', 'experiments']];
+  // layout: id, name, description, crop bed corner, where the villager stands when blocked, and when idle
+  var YV = [['homestead', 'Homestead', '', [12, 80], [97, 62], [118, 90]]];
+  var curA = 0, curY = 'homestead';
+  function makeYard(el) {
+    var crops = '';
+    for (var i = 0; i < 10; i++) crops += '<img class="crop' + (i >= 5 ? ' front' : '') + '" alt="" style="left:calc(var(--bx) + ' + (5 + (i % 5) * 15) + 'px);top:calc(var(--by) + ' + (i < 5 ? 6 : 30) + 'px)">';
+    el.innerHTML = '<div class="cap"><span><b class="pn"></b><span class="psw"> · <span class="ps"></span></span></span><span class="pt"></span></div><div class="yard">' + crops +
+      '<div class="walker"><span class="halo"></span><div class="in"><img class="vil" alt=""><div class="strip"></div><div class="stand"></div><img class="can" src="art/g-can.png" alt=""><img class="shov push" src="art/g-shovel.png" alt=""><img class="shov dig" src="art/g-shovel.png" alt=""><img class="bask" src="art/g-basket.png" alt=""><img class="bang" src="art/g-bang.png" alt=""><span class="zz">z z</span><span class="pour"><span class="drop"></span><span class="drop d2"></span><span class="drop d3"></span></span></div></div><span class="rip" style="left:146px;top:114px;width:8px"></span><span class="rip r2" style="left:166px;top:120px;width:10px"></span><span class="fly"></span><div class="wx">' + flakes(16, 212, 3) + '</div><div class="tint"></div><div class="glow"></div><img class="lit" alt=""><span class="ff" style="left:40px;top:60px"></span><span class="ff f2" style="left:150px;top:66px"></span><span class="ff f3" style="left:176px;top:108px"></span><span class="ff f4" style="left:60px;top:112px"></span></div>';
+    return function (variant) {
+      var a = AG[curA], y = YV.filter(function (v) { return v[0] === variant; })[0], yard = el.querySelector('.yard');
+      yard.dataset.y = variant;
+      if (first) {
+        el.dataset.st = 'empty'; el.querySelector('.pn').textContent = 'Empty plot'; el.querySelector('.pt').textContent = '⌘N to build';
+        yard.style.backgroundImage = 'url(art/yard-' + variant + '-empty-' + season + '.png)'; el.querySelector('.lit').src = 'art/yard-' + variant + '-empty-lit.png';
+        return;
+      }
+      el.dataset.st = a[1];
+      el.querySelector('.pn').textContent = a[0]; el.querySelector('.ps').textContent = a[5]; el.querySelector('.pt').textContent = a[1];
+      el.querySelector('.vil').src = 'art/' + a[2] + '-' + season + '.png';
+      el.querySelector('.walker').style.setProperty('--walk', 'url(art/' + a[2] + '-' + season + '-walk.png)');
+      yard.style.backgroundImage = 'url(art/yard-' + variant + '-' + a[4] + '-' + season + '.png)';
+      el.querySelector('.lit').src = 'art/yard-' + variant + '-' + a[4] + '-lit.png';
+      [['--bx', y[3][0]], ['--by', y[3][1]], ['--kx', y[4][0]], ['--ky', y[4][1]], ['--ix', y[5][0]], ['--iy', y[5][1]]].forEach(function (p) { yard.style.setProperty(p[0], p[1] + 'px'); });
+      var cs = a[3].split(' ');
+      Array.prototype.forEach.call(el.querySelectorAll('.crop'), function (im, k) { im.src = 'art/' + cs[k] + (season === 'winter' ? '-winter' : '') + '.png'; });
+    };
+  }
+  var sideYard = makeYard(document.getElementById('plot'));
+  function refresh() {
+    sideYard(curY);
+  }
+  var agRows = Array.prototype.slice.call(document.querySelectorAll('.row.ag'));
+  function pick(i) {
+    curA = i;
+    agRows.forEach(function (r, k) { r.classList.toggle('sel', k === i); r.setAttribute('aria-pressed', String(k === i)); });
+    refresh();
+  }
+  agRows.forEach(function (r, i) {
+    r.setAttribute('role', 'button'); r.setAttribute('tabindex', '0');
+    r.addEventListener('click', function () { pick(i); });
+    r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i); } });
+  });
+  function setRun(f) {
+    first = f; win.dataset.run = f ? 'first' : 'use';
+    document.getElementById('r-use').setAttribute('aria-pressed', String(!f));
+    document.getElementById('r-first').setAttribute('aria-pressed', String(f));
+    refresh();
+  }
+  document.getElementById('r-use').addEventListener('click', function () { setRun(false); });
+  document.getElementById('r-first').addEventListener('click', function () { setRun(true); });
+  // New space in the mock builds the first home: it switches to the window in use
+  ['new-space', 'new-space-row'].forEach(function (id) {
+    var b = document.getElementById(id);
+    b.addEventListener('click', function () { setRun(false); });
+    if (b.tagName !== 'BUTTON') b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRun(false); } });
+  });
+  // a session with the panes full of text, to judge how the text reads over the valley
+  var tMain = document.getElementById('t-main'), tSide = document.getElementById('t-side'), SHORT = [tMain.innerHTML, tSide.innerHTML], full = false;
+  var P = c('b w', 'herdr-app') + ' ' + c('a', '❯') + ' ', DOTG = c('g', '●') + ' ';
+  function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var FULL_MAIN = [
+    c('m', '> add a winter season to the yard mod and cover the crops'), '',
+    DOTG + 'I will read the yard mod first, then add the season.', '',
+    DOTG + c('w', 'Read') + '(mods/herdewvalley-yard/main.js)',
+    c('m', '  ⎿  Read 212 lines'), '',
+    DOTG + c('w', 'Search') + '(pattern: "seasonOf", path: "mods")',
+    c('m', '  ⎿  Found 3 files'), '',
+    DOTG + 'The mod already knows the season. Two changes are needed:',
+    '  the crop sprites need a covered version, and the working',
+    '  state needs a shovel in place of the watering can.', '',
+    DOTG + c('w', 'Update') + '(mods/herdewvalley-yard/main.js)',
+    c('m', '  ⎿  Updated with 5 additions and 2 removals'),
+    c('m', '       84 ') + esc('   const crops = agent.crops.map((c, i) => {'),
+    c('m', '       85 ') + c('rm', esc('-    return sprite(`p-${c}`);')),
+    c('m', '       85 ') + c('ad', esc("+    const cover = season === 'winter' ? '-winter' : '';")),
+    c('m', '       86 ') + c('ad', esc('+    return sprite(`p-${c}${cover}`);')),
+    c('m', '       87 ') + esc('   });'),
+    c('m', '       88 '),
+    c('m', '       89 ') + c('rm', esc("-  const tool = 'g-can';")),
+    c('m', '       89 ') + c('ad', esc("+  const tool = season === 'winter' ? 'g-shovel' : 'g-can';")), '',
+    DOTG + c('w', 'Bash') + '(herdr-app check mods/herdewvalley-yard)',
+    c('m', '  ⎿  ok  manifest'),
+    c('m', '     ok  main.js (no errors)'),
+    c('m', '     ok  3 assets added'), '',
+    DOTG + c('w', 'Update') + '(mods/herdewvalley-yard/style.css)',
+    c('m', '  ⎿  Updated with 2 additions'),
+    c('m', '       41 ') + c('ad', esc('+  .yard[data-season="winter"] .can { display: none }')),
+    c('m', '       42 ') + c('ad', esc('+  .yard[data-season="winter"] .shovel { display: block }')), '',
+    DOTG + 'Done. In winter the villager clears snow and each crop sits',
+    '  under a cover. I ran the check and the mod loads with no',
+    '  errors. I have not seen it running in Herdr yet.'
+  ].join('\n');
+  var FULL_SIDE = [P + 'git log --oneline -5'].concat(
+    [['a41c2e7', 'yard: winter covers and snow shovel'], ['9d03b1f', 'yard: four seasons'], ['5e7a990', 'tabs: villager face before the name'],
+     ['c2b8d14', 'sidebar: herdewvalley row above settings'], ['77f1a06', 'first run: empty plot, new space row']].map(function (x) { return c('y', x[0]) + ' ' + x[1]; }),
+    ['', P + 'herdr-app check'],
+    ['layouts/herdewvalley.json', 'themes/herdewvalley-paper.json', 'themes/herdewvalley-sand.json', 'themes/herdewvalley-blossom.json', 'mods/herdewvalley-yard', 'mods/herdewvalley-tabs', 'mods/herdewvalley-panel'].map(function (x) { return c('g', 'ok') + '  ' + x; }),
+    [c('m', '7 checked, 0 errors'), '', P + 'ls -l mods/herdewvalley-yard/art'],
+    [['4.9K', 'yard-homestead-barn-autumn.png'], ['4.9K', 'yard-homestead-barn-winter.png'], ['5.0K', 'yard-homestead-cabin-autumn.png'], ['5.0K', 'yard-homestead-cabin-winter.png'],
+     ['4.8K', 'yard-homestead-empty-winter.png'], ['5.0K', 'yard-homestead-farmhouse-autumn.png'], ['5.0K', 'yard-homestead-farmhouse-winter.png'], ['4.9K', 'yard-homestead-greenhouse-winter.png'],
+     ['112B', 'g-shovel.png'], ['131B', 'p-3-winter.png'], ['148B', 'p-4-winter.png']].map(function (x) { return c('m', '-rw-r--r--  ' + x[0] + '  ') + x[1]; }),
+    ['', P + c('cur', ' ')]).join('\n');
+  function setFull(f) {
+    full = f;
+    tMain.classList.toggle('full', f); tSide.classList.toggle('full', f);
+    tMain.innerHTML = f ? '<div>' + FULL_MAIN + '</div>' : SHORT[0];
+    tSide.innerHTML = f ? '<div>' + FULL_SIDE + '</div>' : SHORT[1];
+    document.getElementById('x-short').setAttribute('aria-pressed', String(!f));
+    document.getElementById('x-full').setAttribute('aria-pressed', String(f));
+  }
+  document.getElementById('x-short').addEventListener('click', function () { setFull(false); });
+  document.getElementById('x-full').addEventListener('click', function () { setFull(true); });
+  // how strongly the valley shows behind the panes: faded, blurred, or both, so text over it stays easy to read
+  var PIC = { sharp: [100, 0], faded: [55, 0], blurred: [100, 2], soft: [65, 1.5] }, picO = 65, picB = 1.5;
+  function setPic(o, b) {
+    picO = o; picB = b;
+    win.style.setProperty('--pic-o', String(o / 100)); win.style.setProperty('--pic-b', b + 'px');
+    document.getElementById('set-pico').value = o; document.getElementById('out-pico').textContent = o + '%';
+    document.getElementById('set-picb').value = b; document.getElementById('out-picb').textContent = b ? String(b) : 'off';
+    Object.keys(PIC).forEach(function (k) { document.getElementById('k-' + k).setAttribute('aria-pressed', String(PIC[k][0] === o && PIC[k][1] === b)); });
+  }
+  Object.keys(PIC).forEach(function (k) { document.getElementById('k-' + k).addEventListener('click', function () { setPic(PIC[k][0], PIC[k][1]); }); });
+  document.getElementById('set-pico').addEventListener('input', function () { setPic(Number(this.value), picB); });
+  document.getElementById('set-picb').addEventListener('input', function () { setPic(picO, Number(this.value)); });
+  setPic(picO, picB);
+  var wrap = document.querySelector('.wrap');
+  function motion(on) {
+    wrap.classList.toggle('still', !on);
+    document.getElementById('mo-on').setAttribute('aria-pressed', String(on));
+    document.getElementById('mo-off').setAttribute('aria-pressed', String(!on));
+    syncSet();
+  }
+  // the clock in the status bar, and the settings panel that opens from the sidebar's Settings row
+  var clocks = Array.prototype.map.call(document.querySelectorAll('.bar .gap'), function (el) {
+    var t = el.lastChild, s = document.createElement('span'); s.textContent = t.textContent; s.dataset.sample = t.textContent; el.replaceChild(s, t); return s;
+  });
+  var panel = document.getElementById('hvset'), opener = document.getElementById('hv-open');
+  function syncSet() {
+    var on = !wrap.classList.contains('still');
+    document.getElementById('set-auto').setAttribute('aria-checked', String(auto));
+    document.getElementById('set-autobox').hidden = !auto;
+    document.getElementById('set-manual').hidden = auto;
+    document.getElementById('set-sun').setAttribute('aria-pressed', String(sunMode === 'sun'));
+    document.getElementById('set-hours').setAttribute('aria-pressed', String(sunMode === 'hours'));
+    Array.prototype.forEach.call(document.querySelectorAll('#set-manual button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === win.dataset.m)); });
+    document.getElementById('set-motion').setAttribute('aria-checked', String(on));
+    document.getElementById('set-season').setAttribute('aria-checked', String(sAuto));
+    document.getElementById('season-info').hidden = !sAuto; document.getElementById('season-info').textContent = 'Now: ' + season;
+    document.getElementById('set-seasons').hidden = sAuto;
+    Array.prototype.forEach.call(document.querySelectorAll('#set-seasons button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.s === season)); });
+    sn.forEach(function (x) { document.getElementById('s-' + x).setAttribute('aria-pressed', String(!sAuto && x === season)); });
+    document.getElementById('s-auto').setAttribute('aria-pressed', String(sAuto));
+    Array.prototype.forEach.call(document.querySelectorAll('#set-pal button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === win.dataset.v)); b.firstChild.dataset.m = win.dataset.m; });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#set-pal button'), function (b) { b.addEventListener('click', function () { apply(b.dataset.v, win.dataset.m, auto); }); });
+  function tick() {
+    var d = new Date(), now = d.getHours() + d.getMinutes() / 60, p = phases(d), s = sunTimes(d);
+    document.getElementById('sun-info').textContent = 'Today: sunrise ' + clock(s.rise) + ', sunset ' + clock(s.set);
+    clocks.forEach(function (c) { c.textContent = auto ? clock(now) : c.dataset.sample; });
+    if (sAuto && seasonOf(d) !== season) { season = seasonOf(d); look(); refresh(); syncSet(); }
+    if (auto) apply(win.dataset.v, now >= p[0] && now < p[1] ? 'dawn' : (now >= p[1] && now < p[2] ? 'day' : 'night'), true);
+  }
+  opener.classList.add('open'); opener.setAttribute('role', 'button'); opener.setAttribute('tabindex', '0'); opener.setAttribute('aria-expanded', 'false');
+  function togglePanel() { panel.hidden = !panel.hidden; opener.setAttribute('aria-expanded', String(!panel.hidden)); }
+  opener.addEventListener('click', togglePanel);
+  opener.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePanel(); } });
+  document.getElementById('set-auto').addEventListener('click', function () { auto = !auto; if (auto) tick(); else apply(win.dataset.v, win.dataset.m); tick(); });
+  document.getElementById('set-sun').addEventListener('click', function () { sunMode = 'sun'; tick(); syncSet(); });
+  document.getElementById('set-hours').addEventListener('click', function () { sunMode = 'hours'; tick(); syncSet(); });
+  Array.prototype.forEach.call(document.querySelectorAll('#set-manual button'), function (b) { b.addEventListener('click', function () { apply(win.dataset.v, b.dataset.m); }); });
+  document.getElementById('set-season').addEventListener('click', function () { if (sAuto) setSeason(season, false); else setSeason(seasonOf(new Date()), true); });
+  Array.prototype.forEach.call(document.querySelectorAll('#set-seasons button'), function (b) { b.addEventListener('click', function () { setSeason(b.dataset.s, false); }); });
+  document.getElementById('set-motion').addEventListener('click', function () { motion(wrap.classList.contains('still')); });
+  document.getElementById('mo-on').addEventListener('click', function () { motion(true); });
+  document.getElementById('mo-off').addEventListener('click', function () { motion(false); });
+  motion(true);
+  window.addEventListener('hashchange', fromHash);
+  pick(0);
+  if (!fromHash()) apply('sand', 'day', true);
+  tick();
+  setInterval(tick, 30000);
+
+  function fit() {
+    var s = Math.min(1, stage.clientWidth / 1182);
+    if (s < 0.5) s = 0.5;
+    var box = document.getElementById('fit');
+    box.style.width = Math.ceil(1182 * s) + 'px';
+    box.style.height = Math.ceil(732 * s) + 'px';
+    win.style.transform = s < 1 ? 'scale(' + s + ')' : 'none';
+  }
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(stage); else window.addEventListener('resize', fit);
+})();
+</script>
