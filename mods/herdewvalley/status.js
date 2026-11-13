@@ -7,6 +7,7 @@ import { h_flex } from "gpui-base";
 import { spaces, agents, theme, run, exec, setShared, shared, layout, nextCommand } from "herdr";
 import { ART, look, clockText, setZone, keyHint, setConfig, PALETTES, SEASONS, TODS } from "./core.js";
 import { syncLook, stageSize, find } from "./look.js";
+import { adoptClaudeTheme } from "./claude.js";
 
 const TOD_ICON = { dawn: "dawn", day: "sun", night: "moon" };
 
@@ -25,6 +26,10 @@ export default class Status {
         const name = r.code === 0 ? (r.stdout.trim().split("zoneinfo/")[1] ?? null) : null;
         if (name) { setZone(name); if (shared("hv.zone") !== name) setShared("hv.zone", name); cx.notify(); }
       } catch {}
+    });
+    // Claude Code's own colors follow the valley only on its "auto" theme (see claude.js).
+    cx.spawn(async () => {
+      try { setShared("hv.claude", await adoptClaudeTheme()); } catch (e) { setShared("hv.claude", `error: ${e?.message ?? e}`); }
     });
     // Commands for keys.json or `herdr-app do`: herdewvalley.night, .day, .dawn, .spring, .summer, .autumn,
     // .winter, .paper, .sand, .blossom hold that choice; herdewvalley.auto follows the clock and calendar again.

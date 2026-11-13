@@ -78,6 +78,8 @@ herdr-app do layout.switch --name herdewvalley
 
 Or pick **Herdewvalley** in Herdr's layout settings. `ctrl-shift-l` cycles back to your other layouts.
 
+**Claude Code:** if you never picked a Claude Code theme, Herdewvalley sets it to **Auto** the first time it runs, so Claude's code and file previews stay readable from dawn to night. A theme you chose is left alone, and `/theme` changes it any time. Restart Claude sessions that were already open.
+
 **Needs:** macOS and `python3` (it draws the valley at your window's size). Without Python everything works except the valley picture.
 
 **Reduce Motion:** with macOS Reduce Motion on, Herdr doesn't play timed moves, so the yard switches to a gentler version: the villager faces you and steps along the beds. Turn Reduce Motion off and restart Herdr for the full walk.

@@ -97,14 +97,15 @@ Mod `mods/herdewvalley/` (`mod.json`: `place: "none"`, and an `overlay` of kind 
 | `spaces.js` | spaces | Herdr's `spaces` mod with homes and the first-run row |
 | `agents.js` | agents | Herdr's `agents` mod with villagers; also its sort popup |
 | `tabs.js` | tabs | Herdr's `tabs` mod with villager faces |
-| `status.js` | status | the status bar and clock; notices look or size changes and wakes `look.js`; reads the time zone; takes the `herdewvalley.*` commands |
+| `status.js` | status | the status bar and clock; notices look or size changes and wakes `look.js`; reads the time zone; takes the `herdewvalley.*` commands; runs `claude.js` once at start |
+| `claude.js` | | sets Claude Code's theme to `auto` in `~/.claude/settings.json` when the person never chose one, so its own colors follow light and dark; result in shared `hv.claude` |
 | `yard.js` | yard | the yard, both motion modes |
 | `empty.js` | empty | the first-run screen |
 | `panel.js` | panel | the Herdewvalley panel |
 | `tools/bg.py` | | draws the valley picture (Python 3 standard library) |
 | `tools/art-src/` | | the scripts that draw every picture, and the design preview page |
 
-Herdr functions used: `spaces`, `agents`, `panes`, `terminals`, `focused`, `machines`, `layout`, `theme`, `settings`, `keys`, `window`, `shared`, `setShared`, `run`, `exec`, `hc`, `openOverlay`, `closeOverlay`, `nextCommand`, `setAgentOrder`, `watchFolder`, `appHome`, `updates`, and `fs/promises` (`exists`, `readdir`, `unlink`). Commands: `layout.set`, `layout.select`, `layout.show`, `layout.hide`, `layout.resize`, `space.new`, `space.select`, `space.move`, `tab.*`, `pane.focus`, `terminal.pin`, `terminal.peek`, `mod.open`, `app.settings`, `app.palette`.
+Herdr functions used: `spaces`, `agents`, `panes`, `terminals`, `focused`, `machines`, `layout`, `theme`, `settings`, `keys`, `window`, `shared`, `setShared`, `run`, `exec`, `hc`, `openOverlay`, `closeOverlay`, `nextCommand`, `setAgentOrder`, `watchFolder`, `appHome`, `home`, `readTextFile`, `writeTextFile`, `notify`, `updates`, and `fs/promises` (`exists`, `readdir`, `unlink`). Commands: `layout.set`, `layout.select`, `layout.show`, `layout.hide`, `layout.resize`, `space.new`, `space.select`, `space.move`, `tab.*`, `pane.focus`, `terminal.pin`, `terminal.peek`, `mod.open`, `app.settings`, `app.palette`.
 
 Programs it runs, all local: `python3 tools/bg.py` (draws the valley), `readlink /etc/localtime` (the time zone's name), `defaults read com.apple.universalaccess reduceMotion`, and `git` (Herdr's spaces list, unchanged). No network. It writes only under its own folder (`bg/`) and to shared state.
 
@@ -128,7 +129,8 @@ Art, all original, in `mods/herdewvalley/art/`:
 - `on_size_change` and `window.viewport_size()` report window pixels; divide by `settings().zoom` to get layout pixels.
 - A layout background only scales to cover its node and cannot animate. The valley is drawn at the node's exact size, so it is redrawn when the window, the side panel, or the sidebar changes size. Drawing it in the mod's own JavaScript stalls silently, which is why it is a Python script.
 - `layout.set` cannot run inside a render. Read the layout and write it in the same tick, and only when the look really changed.
-- Terminal programs that print fixed colors (Claude Code) leave hard-to-read scrollback when the look flips between light and dark. Herdr's Minimum contrast setting, or holding one time of day in the panel, avoids it.
+- A terminal's plain text and cursor come only from the theme file, not from the layout's `colors`, so `look.js` rewrites `themes/herdewvalley.json` with every look. Without that, night shows dark text on a dark window.
+- Terminal programs that pick their own colors ignore the theme. Claude Code on its default dark theme paints file previews and code near-white, which vanishes at dawn and day; its `auto` theme asks the terminal for its background and follows each switch, so `claude.js` sets it once. A theme the person chose (in `~/.claude/settings.json`, or other than `dark` in the older `~/.claude.json`) is left alone. Claude Code sessions already running keep their colors until restarted. Scrollback printed before a switch keeps its old colors.
 - `spaces.js`, `agents.js` and `tabs.js` are copies of Herdr 0.1.15's shipped mods with small changes; a newer Herdr may change the originals.
 - Assumes macOS (traffic lights, `defaults`, `/etc/localtime`) and `python3` on the PATH. Without Python, everything works except the valley picture, and shared `hv.error` says why.
 
@@ -141,3 +143,4 @@ Art, all original, in `mods/herdewvalley/art/`:
 - With an agent working (and Reduce Motion off), the villager walks side-on along the top aisle, walks down the bed's edge showing their front, works the lower aisle with the second row of crops behind them, and walks back up showing their back. Their legs visibly step on every frame of a walk, and they stop to water. Blocked shows the "!", done shows the basket, idle shows "z z".
 - With every space closed, the panes area reads "Nothing planted yet" and the yard is the empty lot.
 - The Herdewvalley row opens the panel with every row visible; Settings opens Herdr's own settings.
+- With no `theme` in `~/.claude/settings.json`, the first start adds `"theme": "auto"` and nothing else, shows a toast, and shared `hv.claude` reads `set`; on later starts, or with a theme already chosen, it reads `already-set` and the file is unchanged. `herdewvalley.night` then `herdewvalley.day` writes `themes/herdewvalley.json` with the matching `foreground` and `background`.
