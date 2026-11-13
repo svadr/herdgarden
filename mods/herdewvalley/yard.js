@@ -21,27 +21,35 @@ import { narrow } from "./chrome.js";
 
 const W = 212, H = 132;
 const BX = 12, BY = 80; // the crop bed's corner
-// The round, from the design: where each leg ends (relative to the crop bed), as a percent of the round,
-// whether the villager walks or stands, which way they face (dir: 1 right, -1 left; v: 1 toward you,
-// -1 away), and whether the tool is in use.
-const ROUND_MS = 52100;
+// The round, relative to the crop bed's corner (the villager's top-left). Along the aisle above the first
+// row of crops, watering; down the bed's edge by the path; along the aisle below the second row, watering
+// it, and back; up the edge; across the path to the flower bed; down to the pond and back. Walking speed
+// is the same everywhere, so each leg's time comes from its length.
+const SPEED = 8.6 / 1000; // art pixels per ms
 const START = [-2, -2];
-const LEGS = [
-  { until: 6.76, x: 30, y: -2, walk: true, dir: 1, work: true },
-  { until: 12.52, x: 30, y: -2, walk: false, dir: 1, work: true },
-  { until: 19.27, x: 62, y: -2, walk: true, dir: 1, work: true },
-  { until: 26.53, x: 96, y: -7, walk: true, dir: 1, work: false },
-  { until: 34.97, x: 136, y: -7, walk: true, dir: 1, work: true },
-  { until: 40.73, x: 136, y: -7, walk: false, dir: 1, work: true },
-  { until: 48.75, x: 174, y: -7, walk: true, dir: 1, work: true },
-  { until: 63.53, x: 104, y: -7, walk: true, dir: -1, work: true },
-  { until: 67.54, x: 104, y: 12, walk: true, dir: -1, v: 1, work: false },
-  { until: 75.22, x: 104, y: 12, walk: false, dir: 1, work: false },
-  { until: 78.0, x: 104, y: -2, walk: true, dir: -1, v: -1, work: false },
-  { until: 84.57, x: 62, y: -2, walk: true, dir: -1, work: false },
-  { until: 98.08, x: -2, y: -2, walk: true, dir: -1, work: true },
-  { until: 100, x: -2, y: -2, walk: false, dir: 1, work: true },
+const ROUTE = [
+  ["walk", 30, -2, true], ["stop", 3000, true], ["walk", 62, -2, true], ["walk", 76, -2, true],
+  ["walk", 76, 14, false],
+  ["walk", 40, 14, true], ["stop", 3000, true], ["walk", 6, 14, true], ["stop", 1600, true],
+  ["walk", 76, 14, false], ["walk", 76, -2, false],
+  ["walk", 96, -7, false], ["walk", 136, -7, true], ["stop", 3000, true], ["walk", 174, -7, true],
+  ["walk", 104, -7, true], ["walk", 104, 12, false], ["stop", 4000, false], ["walk", 104, -2, false],
+  ["walk", 62, -2, false], ["walk", -2, -2, true], ["stop", 1200, true],
 ];
+// Each leg: where it ends, how long it takes, walking or standing, which way the villager faces
+// (dir: 1 right, -1 left; v: 1 toward you, -1 away), whether the tool is in use, and where it started.
+const LEGS = (() => {
+  let [x, y] = START, dir = 1;
+  return ROUTE.map(([kind, a, b, work]) => {
+    if (kind === "stop") return { x, y, fromY: y, ms: a, walk: false, dir, work: b };
+    const dx = a - x, dy = b - y;
+    if (dx) dir = dx > 0 ? 1 : -1;
+    const leg = { x: a, y: b, fromY: y, ms: Math.round(Math.hypot(dx, dy) / SPEED), walk: true, dir, work,
+      v: Math.abs(dy) > Math.abs(dx) ? Math.sign(dy) : undefined };
+    x = a; y = b;
+    return leg;
+  });
+})();
 // With reduced motion: the line the villager works along (from, to, top), there and back, and two steps.
 const ROW = [BX + 2, BX + 170, BY - 4];
 const SWING_MS = 40000;
@@ -82,7 +90,7 @@ export default class Yard {
   step(cx, i) {
     this.leg = i;
     // Whole milliseconds: Herdr drops a timed move whose duration is a fraction.
-    this.dur = Math.round((LEGS[i].until - (i ? LEGS[i - 1].until : 0)) / 100 * ROUND_MS);
+    this.dur = LEGS[i].ms;
     const n = ++this.runs;
     cx.timer.after(this.dur, (cx) => {
       if (n !== this.runs) return;
@@ -222,6 +230,8 @@ export default class Yard {
     if (!agent) this.stop();
     const flies = L.tod === "night" && L.motion && (L.season === "spring" || L.season === "summer")
       ? FLIES.map(([x, y, period], i) => at(x, y, 1.5, 1.5).id(`hv-fly-${i}`).bg("#fff3a8").loop("opacity", { from: 0, to: 1, period })) : [];
+    const leg = this.walking && this.leg >= 0 ? LEGS[this.leg] : null;
+    const low = Boolean(leg && status === "working" && (leg.y >= 10 || leg.fromY >= 10));
     const name = none ? "Empty plot" : agent ? agent.program?.name ?? "Agent" : space?.name ?? "";
     const place = agent ? agent.space_name : "";
     const hint = keyHint("space.new");
@@ -239,8 +249,10 @@ export default class Yard {
         .child(div().relative().w(W * s).h(H * s).overflow_hidden()
           .child(at(0, 0, W, H).child(image(`${ART}/yard/${kind}-${L.season}-${L.tod}.png`).size_full()))
           .children(crops.slice(0, 5).map(crop))
+          // In the lower aisle the villager is in front of the second row of crops too.
+          .when(low, (el) => el.children(crops.slice(5).map((n, i) => crop(n, i + 5))))
           .when(Boolean(agent), (el) => el.child(this.walker(cx, s, L, agent, status)))
-          .children(crops.slice(5).map((n, i) => crop(n, i + 5)))
+          .when(!low, (el) => el.children(crops.slice(5).map((n, i) => crop(n, i + 5))))
           .when(Boolean(still), (el) => el.child(still))
           .children(wheels)
           .children(flies)));

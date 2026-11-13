@@ -14,9 +14,34 @@ DOCS = os.path.abspath(os.path.expanduser(sys.argv[2]))
 ART = os.path.join(HERE, 'art')
 BX, BY = 12, 80
 CROPS = {'working': '2 3 3 2 3 1 2 3 2 1', 'blocked': '3 2 3 wilt 2 2 3 wilt 2 3', 'done': '4 4 4 4 4 4 4 4 4 4', 'idle': '1 1 2 1 1 1 2 1 1 1'}
-LEGS = [(6.76, 30, -2, 1, 1, 1), (12.52, 30, -2, 0, 1, 1), (19.27, 62, -2, 1, 1, 1), (26.53, 96, -7, 1, 1, 0), (34.97, 136, -7, 1, 1, 1),
-        (40.73, 136, -7, 0, 1, 1), (48.75, 174, -7, 1, 1, 1), (63.53, 104, -7, 1, -1, 1), (67.54, 104, 12, 1, 'down', 0), (75.22, 104, 12, 0, 1, 0),
-        (78.0, 104, -2, 1, 'up', 0), (84.57, 62, -2, 1, -1, 0), (98.08, -2, -2, 1, -1, 1), (100, -2, -2, 0, 1, 1)]
+SPEED = 8.6 / 1000
+ROUTE = [
+    ("walk", 30, -2, 1), ("stop", 3000, 1), ("walk", 62, -2, 1), ("walk", 76, -2, 1),
+    ("walk", 76, 14, 0),
+    ("walk", 40, 14, 1), ("stop", 3000, 1), ("walk", 6, 14, 1), ("stop", 1600, 1),
+    ("walk", 76, 14, 0), ("walk", 76, -2, 0),
+    ("walk", 96, -7, 0), ("walk", 136, -7, 1), ("stop", 3000, 1), ("walk", 174, -7, 1),
+    ("walk", 104, -7, 1), ("walk", 104, 12, 0), ("stop", 4000, 0), ("walk", 104, -2, 0),
+    ("walk", 62, -2, 0), ("walk", -2, -2, 1), ("stop", 1200, 1),
+]
+
+
+def build_legs():
+    x, y, d, out = -2, -2, 1, []
+    for kind, a, b, *rest in ROUTE:
+        if kind == "stop":
+            out.append((x, y, x, y, a, 0, d, b)); continue
+        dx, dy = a - x, b - y
+        if dx:
+            d = 1 if dx > 0 else -1
+        face = ('down' if dy > 0 else 'up') if abs(dy) > abs(dx) else d
+        out.append((x, y, a, b, round(math.hypot(dx, dy) / SPEED), 1, face, rest[0]))
+        x, y = a, b
+    return out
+
+
+LEGS = build_legs()
+ROUND = sum(l[4] for l in LEGS)
 sprite_cache = {}
 
 
@@ -52,14 +77,14 @@ def frames_of(name, season):
 
 
 def where(t):
-    """Position, facing, walking, tool in use at t (0..1 of the round)."""
-    pct, prev, px, py = t * 100, 0, -2, -2
-    for (until, x, y, walk, d, work) in LEGS:
-        if pct <= until:
-            k = (pct - prev) / (until - prev)
-            return px + (x - px) * k, py + (y - py) * k, d, walk, work
-        prev, px, py = until, x, y
-    return -2, -2, 1, 0, 1
+    """Position, facing, walking, tool in use, and whether in the lower aisle, at t (0..1 of the round)."""
+    ms = (t % 1) * ROUND
+    for (x0, y0, x1, y1, d, walk, face, work) in LEGS:
+        if ms <= d:
+            k = ms / d if d else 1
+            return x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, face, walk, work, max(y0, y1) >= 10
+        ms -= d
+    return -2, -2, 1, 0, 1, False
 
 
 def particles(season, t, rnd_seed=4):
@@ -85,14 +110,21 @@ def yard_frame(season, tod, status, t, who='farmer', kind='farmhouse', walk_t=No
     crop = lambda i: sprite(os.path.join(ART, f'p-{crops[i]}{"-winter" if winter else ""}.png'))
     for i in range(5):
         blit(c, crop(i), BX + 5 + i * 15, BY + 6)
+    low = status == 'working' and where(walk_t if walk_t is not None else t)[5]
+    if low:
+        for i in range(5, 10):
+            blit(c, crop(i), BX + 5 + (i % 5) * 15, BY + 30)
     walk, front, turn = villager_frames[(who, season)]
     if status == 'working':
-        x, y, d, walking, work = where(walk_t if walk_t is not None else t)
+        x, y, d, walking, work, low = where(walk_t if walk_t is not None else t)
         x, y = int(BX + x), int(BY + y)
         if d in ('down', 'up'):
             blit(c, turn[d][int(t * 200) % 4], x, y)
             if d == 'down':
                 blit(c, sprite(os.path.join(ART, 'g-can.png' if not winter else 'g-shovel.png')), x + 11, y + 20)
+            if not low:
+                for i in range(5, 10):
+                    blit(c, crop(i), BX + 5 + (i % 5) * 15, BY + 30)
             for (xx, yy, col, sz) in particles(season, t):
                 for dx in range(sz):
                     c.set(xx + dx, yy, col)
@@ -124,8 +156,9 @@ def yard_frame(season, tod, status, t, who='farmer', kind='farmhouse', walk_t=No
             blit(c, sprite(os.path.join(ART, 'g-basket.png')), spot[0] + 10, spot[1] + 21)
         if status == 'blocked' and int(t * 40) % 2 == 0:
             blit(c, sprite(os.path.join(ART, 'g-bang.png')), spot[0] + 5, spot[1] - 10)
-    for i in range(5, 10):
-        blit(c, crop(i), BX + 5 + (i % 5) * 15, BY + 30)
+    if not low:
+        for i in range(5, 10):
+            blit(c, crop(i), BX + 5 + (i % 5) * 15, BY + 30)
     for (x, y, col, sz) in particles(season, t):
         for dx in range(sz):
             c.set(x + dx, y, col)
@@ -152,7 +185,7 @@ if __name__ == '__main__':
         for season in ex.SEASONS:
             villager_frames[(who, season)] = frames_of(who, season)
     # 1. a whole round of watering, compressed: 52 s in 10 s
-    n = 100
+    n = 160
     gif([yard_frame('summer', 'day', 'working', i / n, walk_t=i / n) for i in range(n)], os.path.join(DOCS, 'yard-round.gif'), 10)
     # 2. the four seasons, 3 s each, villager working
     fr = []
