@@ -3,7 +3,8 @@
 
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { theme } from "herdr";
+import { theme, setShared } from "herdr";
+import { adoptClaudeStatusLine, dropClaudeStatusLine } from "./claude.js";
 import { FONT, PALETTES, SEASONS, TODS, config, setConfig, look, colors, sunTimes, clockText } from "./core.js";
 import { panelRoom } from "./chrome.js";
 
@@ -58,6 +59,16 @@ export default class Panel {
       .child(label("Background picture: blur"))
       .child(seg("blur", BLURS, c.blur, (v) => setConfig({ blur: v }), (v) => (v ? String(v) : "Off")))
       .child(line())
-      .child(toggle("motion", "Animations", c.motion !== false, () => setConfig({ motion: c.motion === false })));
+      .child(toggle("motion", "Animations", c.motion !== false, () => setConfig({ motion: c.motion === false })))
+      .child(line())
+      .child(toggle("claude-line", "Claude Code status line", c.claudeLine === true, (_e, cx) => {
+        const on = c.claudeLine !== true;
+        setConfig({ claudeLine: on });
+        cx.spawn(async () => {
+          try { setShared("hv.claude.statusline", on ? await adoptClaudeStatusLine() : await dropClaudeStatusLine()); }
+          catch (e) { setShared("hv.claude.statusline", `error: ${e?.message ?? e}`); }
+        });
+      }))
+      .child(label(c.claudeLine === true ? "Gardener. Off puts your old one back." : "Shows Gardener in ~/.claude/settings.json."));
   }
 }

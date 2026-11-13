@@ -5,9 +5,9 @@
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, agents, theme, run, exec, setShared, shared, layout, nextCommand } from "herdr";
-import { ART, look, clockText, setZone, keyHint, setConfig, PALETTES, SEASONS, TODS } from "./core.js";
+import { ART, look, clockText, setZone, keyHint, config, setConfig, PALETTES, SEASONS, TODS } from "./core.js";
 import { syncLook, stageSize, find } from "./look.js";
-import { adoptClaudeTheme } from "./claude.js";
+import { adoptClaudeTheme, adoptClaudeStatusLine, claudeStatusLineOn } from "./claude.js";
 
 const TOD_ICON = { dawn: "dawn", day: "sun", night: "moon" };
 
@@ -30,6 +30,14 @@ export default class Status {
     // Claude Code's own colors follow the valley only on its "auto" theme (see claude.js).
     cx.spawn(async () => {
       try { setShared("hv.claude", await adoptClaudeTheme()); } catch (e) { setShared("hv.claude", `error: ${e?.message ?? e}`); }
+      // Then its status line, only if the person turned it on in the panel (both write
+      // ~/.claude/settings.json, so one after the other). With no choice made yet, the switch
+      // shows what is there now, so nothing changes until the person flips it.
+      try {
+        const want = config().claudeLine, on = await claudeStatusLineOn();
+        if (want === undefined) { setConfig({ claudeLine: on }); setShared("hv.claude.statusline", on ? "on" : "off"); }
+        else setShared("hv.claude.statusline", want && !on ? await adoptClaudeStatusLine() : (on ? "on" : "off"));
+      } catch (e) { setShared("hv.claude.statusline", `error: ${e?.message ?? e}`); }
     });
     // Commands for keys.json or `herdr-app do`: herdgarden.night, .day, .dawn, .spring, .summer, .autumn,
     // .winter, .paper, .sand, .blossom hold that choice; herdgarden.auto follows the clock and calendar again.
@@ -62,6 +70,10 @@ export default class Status {
     const key = JSON.stringify([L.palette, L.tod, L.season, L.strength, L.blur, size, spaces().length > 0, stage?.background?.image ?? null, stage?.active ?? null]);
     if (key === this.key) return L;
     this.key = key;
+    // What the window wears now, for programs outside Herdr: the Claude Code status line's sky reads it.
+    const now = { palette: L.palette, tod: L.tod, season: L.season };
+    const was = shared("hv.now");
+    if (was?.palette !== now.palette || was?.tod !== now.tod || was?.season !== now.season) setShared("hv.now", now);
     this.size = size;
     const n = ++this.gen;
     cx.timer.after(350, () => { if (n === this.gen) this.wake?.(); });

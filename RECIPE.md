@@ -97,8 +97,10 @@ Mod `mods/herdgarden/` (`mod.json`: `place: "none"`, and an `overlay` of kind `d
 | `spaces.js` | spaces | Herdr's `spaces` mod with homes and the first-run row |
 | `agents.js` | agents | Herdr's `agents` mod with villagers; also its sort popup |
 | `tabs.js` | tabs | Herdr's `tabs` mod with villager faces |
-| `status.js` | status | the status bar and clock; notices look or size changes and wakes `look.js`; reads the time zone; takes the `herdgarden.*` commands; runs `claude.js` once at start |
+| `status.js` | status | the status bar and clock; notices look or size changes and wakes `look.js`; reads the time zone; takes the `herdgarden.*` commands; runs `claude.js` once at start; publishes the shown palette, time of day and season as shared `hv.now` |
 | `claude.js` | | sets Claude Code's theme to `auto` in `~/.claude/settings.json` when the person never chose one, so its own colors follow light and dark; result in shared `hv.claude` |
+| | | also turns the Gardener status line (`tools/statusline.py`) on or off as `statusLine`, only when the panel's switch says so (shared `hv.config.claudeLine`); turning it on keeps the replaced line in `data/herdgarden/claude-statusline-before.json`, turning it off puts that one back; result in shared `hv.claude.statusline` |
+| `tools/statusline.py` | | the Gardener status line: three lines from Claude Code's JSON on stdin, in the 16 ANSI colors so it follows the theme; the sky is `hv.now.tod` from `shared.json`, else fixed hours (dawn 5:30, day 8:00, night 18:00) |
 | `yard.js` | yard | the yard, both motion modes |
 | `empty.js` | empty | the first-run screen |
 | `panel.js` | panel | the Herdgarden panel |
@@ -144,3 +146,4 @@ Art, all original, in `mods/herdgarden/art/`:
 - With every space closed, the panes area reads "Nothing planted yet" and the yard is the empty lot.
 - The Herdgarden row opens the panel with every row visible; Settings opens Herdr's own settings.
 - With no `theme` in `~/.claude/settings.json`, the first start adds `"theme": "auto"` and nothing else, shows a toast, and shared `hv.claude` reads `set`; on later starts, or with a theme already chosen, it reads `already-set` and the file is unchanged. `herdgarden.night` then `herdgarden.day` writes `themes/herdgarden.json` with the matching `foreground` and `background`.
+- With `hv.config.claudeLine` unset, the first start leaves `~/.claude/settings.json` alone and sets `claudeLine` to whether the Gardener line is already there. Switching **Claude Code status line** on in the panel sets `statusLine` to `python3 '<home>/mods/herdgarden/tools/statusline.py'` with `padding: 0`, saves the earlier `statusLine` to `data/herdgarden/claude-statusline-before.json`, and shared `hv.claude.statusline` reads `set`. Switching it off restores that line (or removes `statusLine` if there was none) and reads `restored` or `removed`. Piping `{"context_window":{"used_percentage":25}}` to the script prints a second line with 🌿 and 3 of 10 meter cells filled.

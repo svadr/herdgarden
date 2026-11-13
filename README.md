@@ -107,6 +107,7 @@ Herdr's own **Settings** stays as it is. Herdgarden's choices live in their own 
 - **Time of day:** use sunrise and sunset for your time zone, use fixed hours, or hold one look.
 - **Background picture:** set its strength and blur.
 - **Animations:** turn them on or off.
+- **Claude Code status line:** use the Gardener status line, or keep your own.
 
 To hold a look from the terminal, run a Herdgarden command:
 
@@ -125,11 +126,9 @@ To bind the same commands to keys, add them to `~/.config/herdr-app/keys.json`:
 
 Claude Code picks its own text colors. On its default dark theme, its code and file previews are hard to read when the window turns light at dawn. If you never chose a Claude Code theme, Herdgarden sets it to **Auto** the first time it runs, so Claude Code follows the window from dawn to night. A theme you chose stays as it is, and `/theme` in Claude Code changes it at any time. Restart any Claude Code sessions that were already open.
 
-`extras/claude-code-statusline.sh` is the "Gardener" status line in the screenshots. It shows 🧑‍🌾 the model, 🏡 the folder, 🌿 the branch, 🪙 the cost, and meters for context and usage. It needs `jq`. To turn it on, add it to `~/.claude/settings.json`:
+Herdgarden also offers Claude Code its "Gardener" status line, the one in the screenshots. It shows 🧑‍🌾 the model, 🏡 the folder, 🌿 the branch, 🪙 the cost, and the session time under 🌅 ☀️ or 🌙, the sky the window shows. Under that are meters for context (a plant that grows from 🌱 to 🌳), 💧 5-hour usage and 🌾 7-day usage, and when the two limits reset. It needs `python3`.
 
-```json
-{ "statusLine": { "type": "command", "command": "bash /path/to/herdgarden/extras/claude-code-statusline.sh" } }
-```
+The status line is off until you turn it on. To turn it on, open the **Herdgarden** panel and switch on **Claude Code status line**. Herdgarden then sets `statusLine` in `~/.claude/settings.json` and keeps your old status line in `~/.config/herdr-app/data/herdgarden/claude-statusline-before.json`. To get your old one back, switch it off again. The change shows on your next message in Claude Code.
 
 ## How it's made
 
