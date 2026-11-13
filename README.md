@@ -19,41 +19,74 @@ When you select an agent, the sidebar shows its yard. The villager in the yard a
 - **Idle:** rests by the flower bed.
 
 <p align="center">
-  <img src="docs/yard-states.gif" width="100%" alt="The yard for an agent that is working, blocked, done, and idle"><br>
-  <sub>working · blocked · done · idle</sub>
+  <img src="docs/yard-states.gif" width="100%" alt="Four yards side by side, labeled Working, Blocked, Done, and Idle">
 </p>
+
+A working villager doesn't stand still. They water both rows of the crop bed, look in on the flower bed, stop at the pond, and walk home again:
 
 <p align="center">
-  <img src="docs/yard-round.gif" width="66%" alt="A villager walks a round of the crop bed and waters it">
+  <img src="docs/yard-round.gif" width="60%" alt="A villager walks one full round of the garden, watering the crop bed">
 </p>
 
-## Follow the seasons and the sun
+## Dawn, day, and night
 
-The window follows your clock and your calendar. Dawn starts half an hour before your local sunrise, and night starts at sunset. In spring the cherry tree blooms. In autumn the leaves fall and the pumpkins ripen. In winter the crops go under glass, and the villager shovels snow instead of watering.
+The whole window follows your clock. Dawn starts half an hour before your local sunrise, day starts an hour and a half after it, and night starts at sunset. Herdgarden works out sunrise and sunset from your time zone, so you don't set a location.
 
 <p align="center">
-  <img src="docs/yard-seasons.gif" width="49%" alt="The same yard in spring, summer, autumn, and winter">
-  <img src="docs/yard-winter-night.gif" width="49%" alt="A winter night in the yard, with the lamps lit and snow falling">
+  <img src="docs/window-times.gif" width="100%" alt="The Herdgarden window fading from dawn to day to night">
 </p>
+
+In the yard, the lamps and the house windows light up at dawn and after dark:
+
+<p align="center">
+  <img src="docs/yard-times.gif" width="60%" alt="The same yard at dawn, by day, and at night, labeled">
+</p>
+
+## Three palettes
+
+Each palette has its own dawn, day, and night colors. **Paper** is the default: near-white with green-gray text. **Sand** is warmer, and **Blossom** has a pink tint. All three look like this in summer:
 
 <table>
   <tr>
-    <td width="33%"><img src="docs/sand-dawn-spring.png" alt="Sand palette at dawn in spring"></td>
-    <td width="33%"><img src="docs/blossom-day-autumn.png" alt="Blossom palette on an autumn day"></td>
-    <td width="33%"><img src="docs/paper-night-winter.png" alt="Paper palette on a winter night"></td>
+    <th></th>
+    <th>Paper</th>
+    <th>Sand</th>
+    <th>Blossom</th>
   </tr>
   <tr>
-    <td align="center"><sub>Sand · spring dawn</sub></td>
-    <td align="center"><sub>Blossom · autumn day</sub></td>
-    <td align="center"><sub>Paper · winter night</sub></td>
+    <th>Day</th>
+    <td><img src="docs/paper-day-summer.png" alt="Paper palette by day"></td>
+    <td><img src="docs/sand-day-summer.png" alt="Sand palette by day"></td>
+    <td><img src="docs/blossom-day-summer.png" alt="Blossom palette by day"></td>
+  </tr>
+  <tr>
+    <th>Night</th>
+    <td><img src="docs/paper-night-summer.png" alt="Paper palette at night"></td>
+    <td><img src="docs/sand-night-summer.png" alt="Sand palette at night"></td>
+    <td><img src="docs/blossom-night-summer.png" alt="Blossom palette at night"></td>
   </tr>
 </table>
+
+Pick a palette in the **Herdgarden** panel. Click a picture to see it full size.
+
+## Four seasons
+
+The yard and the valley follow your calendar. Seasons start on 20 March, 21 June, 22 September, and 21 December, and they swap south of the equator.
+
+- **Spring:** the cherry tree blooms, tulips fill the flower bed, and petals drift by.
+- **Summer:** sunflowers.
+- **Autumn:** the trees turn orange and gold, pumpkins ripen, and leaves fall.
+- **Winter:** snow covers the roof, the pond freezes, the crops go under glass, and the villager shovels snow instead of watering.
+
+<p align="center">
+  <img src="docs/yard-seasons.gif" width="60%" alt="The same yard in spring, summer, autumn, and winter, labeled">
+</p>
 
 ## Meet the villagers
 
 <table>
   <tr>
-    <td width="40%" align="center"><img src="docs/villagers.gif" alt="The four villagers walking, one row per season"></td>
+    <td width="42%" align="center"><img src="docs/villagers.gif" alt="The four villagers walking, one row for each season"></td>
     <td>
 
 Each agent program gets its own villager:
@@ -67,7 +100,7 @@ Each agent program gets its own villager:
 
 Other agents get one of these four. A tab with an agent in it shows that villager's face before the tab name.
 
-The villagers dress for the season. Each row of the picture is one season, from spring at the top to winter at the bottom: light colors, then summer clothes, then scarves, then coats and mittens.
+The villagers dress for the season: light colors in spring, scarves in autumn, and coats and mittens in winter.
 
 </td>
   </tr>
@@ -132,7 +165,7 @@ The status line is off until you turn it on. To turn it on, open the **Herdgarde
 
 ## How it's made
 
-All of the pixel art is original. Small Python scripts in [`mods/herdgarden/tools/art-src`](mods/herdgarden/tools/art-src) draw every picture, with no image editor. [`RECIPE.md`](RECIPE.md) describes the layout in enough detail for an agent to rebuild it from an empty folder. The spaces, agents, and tabs lists are copies of Herdr's own mods with small changes.
+All of the pixel art is original. Small Python scripts in [`mods/herdgarden/tools/art-src`](mods/herdgarden/tools/art-src) draw every picture, with no image editor. `gifs.py` draws the yard GIFs in this README, and `readme_shots.py` takes the window screenshots from the design preview. [`RECIPE.md`](RECIPE.md) describes the layout in enough detail for an agent to rebuild it from an empty folder. The spaces, agents, and tabs lists are copies of Herdr's own mods with small changes.
 
 ## License
 

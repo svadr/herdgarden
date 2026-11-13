@@ -165,11 +165,42 @@ def yard_frame(season, tod, status, t, who='farmer', kind='farmhouse', walk_t=No
     return c
 
 
-def gif(frames, path, delay, scale=3):
+# Labels are drawn smooth onto the enlarged frames, in the system UI font, so they read at any size.
+UI_FONT = '/System/Library/Fonts/SFNS.ttf' if os.path.exists('/System/Library/Fonts/SFNS.ttf') else 'Helvetica'
+badge_cache = {}
+
+
+def badge_png(text, size):
+    """A rounded dark badge with white text, as a PNG path and its size in pixels."""
+    if (text, size) not in badge_cache:
+        d = tempfile.mkdtemp()
+        t, b = os.path.join(d, 't.png'), os.path.join(d, 'b.png')
+        subprocess.run(['magick', '-background', 'none', '-fill', 'white', '-font', UI_FONT, '-pointsize', str(size), f'label:{text}', t], check=True)
+        w, h = map(int, subprocess.run(['magick', 'identify', '-format', '%w %h', t], capture_output=True, text=True, check=True).stdout.split())
+        bw, bh, r = w + round(size * 1.1), h + round(size * 0.5), round(size * 0.45)
+        subprocess.run(['magick', '-size', f'{bw}x{bh}', 'xc:none', '-fill', 'rgba(26,32,30,0.78)', '-draw', f'roundrectangle 0,0,{bw - 1},{bh - 1},{r},{r}',
+                        t, '-gravity', 'center', '-composite', b], check=True)
+        badge_cache[(text, size)] = (b, bw, bh)
+    return badge_cache[(text, size)]
+
+
+# Mod time per GIF frame, as a share of the 52-second working round. Frames show for 0.1 s, so
+# 0.16 s of mod time per frame plays the yard 1.6 times faster than it runs in Herdr.
+STEP = 0.16 / 52
+
+
+def gif(frames, path, delay, scale=3, labels=None):
+    """labels: for each frame, a list of (text, x, y) in frame pixels before scaling."""
     tmp = tempfile.mkdtemp()
     names = []
     for i, f in enumerate(frames):
         n = os.path.join(tmp, f'{i:04d}.png'); ex.save(f, n, scale); names.append(n)
+        if labels and labels[i]:
+            cmd = ['magick', n]
+            for (text, x, y) in labels[i]:
+                b, _, _ = badge_png(text, round(7.5 * scale))
+                cmd += [b, '-geometry', f'+{x * scale}+{y * scale}', '-composite']
+            subprocess.run(cmd + [n], check=True)
     subprocess.run(['magick', '-delay', str(delay), '-loop', '0', *names, '-layers', 'Optimize', path], check=True)
     shutil.rmtree(tmp)
     print(path, os.path.getsize(path) // 1024, 'KB')
@@ -178,47 +209,61 @@ def gif(frames, path, delay, scale=3):
 if __name__ == '__main__':
     os.makedirs(DOCS, exist_ok=True)
     bases, villager_frames = {}, {}
-    need = [('farmhouse', s, 'day') for s in ex.SEASONS] + [('farmhouse', 'summer', 'night'), ('farmhouse', 'winter', 'night'), ('farmhouse', 'autumn', 'dawn')]
+    need = [('farmhouse', s, 'day') for s in ex.SEASONS] + [('farmhouse', 'summer', 'night'), ('farmhouse', 'summer', 'dawn'), ('farmhouse', 'winter', 'night'), ('farmhouse', 'autumn', 'dawn')]
     for (kind, season, tod) in need:
         bases[(kind, season, tod)] = ex.lit(gs.yard(kind, season), season, tod, kind)
     for who in ('farmer', 'tinker', 'gardener', 'elder'):
         for season in ex.SEASONS:
             villager_frames[(who, season)] = frames_of(who, season)
-    # 1. a whole round of watering, compressed: 52 s in 10 s
-    n = 160
-    gif([yard_frame('summer', 'day', 'working', i / n, walk_t=i / n) for i in range(n)], os.path.join(DOCS, 'yard-round.gif'), 10)
-    # 2. the four seasons, 3 s each, villager working
-    fr = []
-    for k, season in enumerate(ex.SEASONS):
-        for i in range(30):
-            t = i / 30
-            fr.append(yard_frame(season, 'day', 'working', t * 0.4 + k * 0.1, walk_t=0.02 + t * 0.10 if season != 'winter' else 0.07 + t * 0.05))
-    gif(fr, os.path.join(DOCS, 'yard-seasons.gif'), 10)
-    # 3. the four states, side by side
+    # Every yard GIF steps the same small slice of mod time per frame (STEP), so the villager walks,
+    # the water drips and the "!" blinks at one steady pace, a little faster than in Herdr.
+    # 1. a whole working round: watering both beds, the flower bed, the pond, and home again
+    n = round(1 / STEP)
+    gif([yard_frame('summer', 'day', 'working', i * STEP, walk_t=i * STEP) for i in range(n)],
+        os.path.join(DOCS, 'yard-round.gif'), 10, labels=[[('Working', 4, 4)]] * n)
+    # 2. the four states, side by side, each named
     states = ('working', 'blocked', 'done', 'idle')
     fr = []
-    for i in range(40):
-        t = i / 40
-        tiles = [yard_frame('summer', 'day', st, t, walk_t=0.0 + t * 0.12) for st in states]
+    for i in range(80):
+        tiles = [yard_frame('summer', 'day', st, i * STEP, walk_t=0.0 + i * STEP) for st in states]
         sheet = C(212 * 4 + 6, 132)
         for k, tile in enumerate(tiles):
             for y in range(132):
                 sheet.p[y][k * 214:k * 214 + 212] = tile.p[y]
         fr.append(sheet)
-    gif(fr, os.path.join(DOCS, 'yard-states.gif'), 10, scale=2)
-    # 4. the yard after dark, in winter: lamps lit, snow, shovel
-    gif([yard_frame('winter', 'night', 'working', i / 40, walk_t=0.07 + (i / 40) * 0.05) for i in range(40)], os.path.join(DOCS, 'yard-winter-night.gif'), 10)
-    # 5. the villagers walking, every season
+    gif(fr, os.path.join(DOCS, 'yard-states.gif'), 10, scale=2,
+        labels=[[(st.capitalize(), k * 214 + 4, 4) for k, st in enumerate(states)]] * len(fr))
+    # 3. the four seasons, 5 s each, villager at work, the season named
+    start = {'spring': 0.02, 'summer': 0.02, 'autumn': 0.02, 'winter': 0.07}
+    fr, lb = [], []
+    for season in ex.SEASONS:
+        for i in range(50):
+            t = start[season] + i * STEP
+            fr.append(yard_frame(season, 'day', 'working', t, walk_t=t)); lb.append([(season.capitalize(), 4, 4)])
+    gif(fr, os.path.join(DOCS, 'yard-seasons.gif'), 10, labels=lb)
+    # 4. dawn, day and night in the same summer yard: lamps and windows light up after dark
+    fr, lb = [], []
+    for tod in ('dawn', 'day', 'night'):
+        for i in range(50):
+            t = 0.02 + i * STEP
+            fr.append(yard_frame('summer', tod, 'working', t, walk_t=t)); lb.append([(tod.capitalize(), 4, 4)])
+    gif(fr, os.path.join(DOCS, 'yard-times.gif'), 10, labels=lb)
+    # 5. the villagers walking, every season: one column per agent, one row per season, rows named
+    LEFT, TOP, SCALE = 30, 1, 5
     fr = []
     for i in range(8):
-        sheet = C(4 * 20 + 4, 4 * 34 + 2)
+        sheet = C(LEFT + 4 * 20 + 4, TOP + 4 * 34 + 2)
         for col, who in enumerate(('farmer', 'tinker', 'gardener', 'elder')):
             for row, season in enumerate(ex.SEASONS):
-                blit(sheet, villager_frames[(who, season)][0][i % 4], 4 + col * 20, 1 + row * 34)
+                blit(sheet, villager_frames[(who, season)][0][i % 4], LEFT + 4 + col * 20, TOP + 1 + row * 34)
         fr.append(sheet)
     tmp = tempfile.mkdtemp(); names = []
     for i, f in enumerate(fr):
-        nm = os.path.join(tmp, f'{i}.png'); ex.save(f, nm, 5); names.append(nm)
+        nm = os.path.join(tmp, f'{i}.png'); ex.save(f, nm, SCALE)
+        cmd = ['magick', nm, '-background', '#f4f5ef', '-alpha', 'remove', '-font', UI_FONT, '-pointsize', '28', '-fill', '#66726b', '-gravity', 'NorthEast']
+        for row, season in enumerate(ex.SEASONS):
+            cmd += ['-annotate', f'+{(4 * 20 + 4 + 4) * SCALE}+{(TOP + 1 + row * 34 + 16) * SCALE - 18}', season.capitalize()]
+        subprocess.run(cmd + [nm], check=True); names.append(nm)
     out = os.path.join(DOCS, 'villagers.gif')
-    subprocess.run(['magick', '-delay', '22', '-loop', '0', *names, '-background', '#f4f5ef', '-alpha', 'remove', '-layers', 'Optimize', out], check=True)
+    subprocess.run(['magick', '-delay', '24', '-loop', '0', *names, '-layers', 'Optimize', out], check=True)
     print(out)
