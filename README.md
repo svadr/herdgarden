@@ -118,6 +118,16 @@ Before you open your first space, the window shows an empty plot with a **New sp
 
 ## Install
 
+Paste this line into your coding agent. It reads Herdr's guide, then adds Herdgarden next to your own layouts:
+
+```
+Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/svadr/herdgarden/tree/main
+```
+
+Herdgarden is also listed in the [Herdr gallery](https://herdr.dev/gallery/).
+
+To install it by hand instead:
+
 ```sh
 git clone https://github.com/svadr/herdgarden.git
 cd herdgarden
