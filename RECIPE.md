@@ -1,6 +1,6 @@
 # Herdgarden
 
-A quiet garden for Herdr. Each space gets a pixel-art home in the sidebar and each agent becomes a villager. Below the lists, the agent you are looking at has its own top-down farm yard, where its villager waters the crops while it works. A tab with an agent in it shows that villager's face. Behind the panes, a soft pixel valley sits in the bottom-right corner. The whole window follows the local clock (dawn, day, night) and the calendar (spring, summer, autumn, winter): colors, the valley, the yard, and the villagers' clothes all change. Three palettes: Paper (the default), Sand, and Blossom.
+A cozy pixel garden for Herdr. Spaces are homes, agents are villagers who water their crops while they work, and the window follows the clock and the seasons.
 
 ![Herdgarden](preview.png)
 
